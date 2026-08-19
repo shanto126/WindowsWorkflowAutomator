@@ -17,6 +17,8 @@ public sealed class GitHubService : IGitHubService
     private readonly IAppSettingsService _settings;
     private readonly ISecretProtector _secretProtector;
     private readonly IAppLogger _logger;
+    private AutoSyncService? _autoSyncService; // managed per service lifetime
+    private readonly object _autoSyncSync = new();
 
     public GitHubService(
         IServiceScopeFactory scopeFactory,
@@ -44,7 +46,9 @@ public sealed class GitHubService : IGitHubService
             RemoteUrl = config.RemoteUrl,
             Branch = config.Branch,
             CommitMessageTemplate = config.CommitMessageTemplate,
-            HasPersonalAccessToken = !string.IsNullOrWhiteSpace(_settings.Current.GitHubPatProtected)
+            HasPersonalAccessToken = !string.IsNullOrWhiteSpace(_settings.Current.GitHubPatProtected),
+            SyncMode = config.SyncMode ?? GitHubSyncMode.Manual,
+            InactivitySeconds = config.InactivitySeconds > 0 ? config.InactivitySeconds : 30
         };
     }
 
@@ -54,6 +58,8 @@ public sealed class GitHubService : IGitHubService
         string branch,
         string? commitMessageTemplate = null,
         string? personalAccessToken = null,
+        string? syncMode = null,
+        int? inactivitySeconds = null,
         CancellationToken cancellationToken = default)
     {
         localPath = localPath?.Trim() ?? string.Empty;
@@ -144,9 +150,34 @@ public sealed class GitHubService : IGitHubService
             config.RemoteUrl = remoteUrl;
             config.Branch = branch;
             config.CommitMessageTemplate = commitMessageTemplate;
+            if (!string.IsNullOrWhiteSpace(syncMode))
+            {
+                config.SyncMode = syncMode!;
+            }
+
+            if (inactivitySeconds.HasValue)
+            {
+                config.InactivitySeconds = inactivitySeconds.Value;
+            }
+
             config.UpdatedAtUtc = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync(cancellationToken);
         }
+
+        // Start/stop auto-sync according to saved configuration
+        try
+        {
+            var saved = await GetConfigurationAsync(cancellationToken);
+            if (saved is not null && saved.SyncMode == GitHubSyncMode.SmartAutoSync && !string.IsNullOrWhiteSpace(saved.LocalPath))
+            {
+                StartAutoSync(saved.LocalPath, saved.InactivitySeconds);
+            }
+            else
+            {
+                StopAutoSync();
+            }
+        }
+        catch { /* keep configure resilient */ }
 
         if (personalAccessToken is not null)
         {
@@ -248,7 +279,7 @@ public sealed class GitHubService : IGitHubService
 
         await AddActivityAsync("Information", "GitHub", $"Local commit created: {commitMessage}", cancellationToken);
         _logger.Information($"Git commit created with message: {commitMessage}");
-        return GitHubOperationResult.Ok("Commit created locally.", [commitResult.Output]);
+        return GitHubOperationResult.Ok("Commit created locally.", new[] { commitResult.Output });
     }
 
     public async Task<GitHubOperationResult> PushAsync(CancellationToken cancellationToken = default)
@@ -303,7 +334,7 @@ public sealed class GitHubService : IGitHubService
 
         await AddActivityAsync("Information", "GitHub", $"Pushed branch '{config.Branch}' to origin.", cancellationToken);
         _logger.Information($"Git push completed for branch '{config.Branch}'.");
-        return GitHubOperationResult.Ok("Push completed successfully.", [push.Output]);
+        return GitHubOperationResult.Ok("Push completed successfully.", new[] { push.Output });
     }
 
     private async Task<GitHubRepository?> GetConfigurationEntityAsync(CancellationToken cancellationToken)
@@ -355,6 +386,12 @@ public sealed class GitHubService : IGitHubService
         return GitHubOperationResult.Fail(status, message, details);
     }
 
+    // Exposed to allow AutoSyncService to log activity via the service interface
+    public async Task LogActivityAsync(string level, string category, string message, CancellationToken cancellationToken = default)
+    {
+        await AddActivityAsync(level, category, message, cancellationToken);
+    }
+
     private async Task AddActivityAsync(string level, string category, string message, CancellationToken cancellationToken)
     {
         using var scope = _scopeFactory.CreateScope();
@@ -372,11 +409,11 @@ public sealed class GitHubService : IGitHubService
     {
         if (string.IsNullOrWhiteSpace(porcelain))
         {
-            return [];
+            return new List<string>();
         }
 
         var lines = porcelain
-            .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+            .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
             .Select(line => line.Length >= 4 ? line[3..].Trim() : line.Trim())
             .Where(line => line.Length > 0)
             .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -475,4 +512,61 @@ public sealed class GitHubService : IGitHubService
     }
 
     private readonly record struct GitCommandResult(bool Succeeded, string Output, string Error);
+
+    // Expose convenience wrapper required by interface
+    public Task<GitHubRepositorySnapshot?> GetConfigurationWithSyncAsync(CancellationToken cancellationToken = default)
+    {
+        return GetConfigurationAsync(cancellationToken);
+    }
+
+    private void StartAutoSync(string localPath, int inactivitySeconds)
+    {
+        lock (_autoSyncSync)
+        {
+            try
+            {
+                if (_autoSyncService is not null)
+                {
+                    // If already running for same path, update inactivity and return
+                    if (string.Equals(_autoSyncService.WatchedFolder, Path.GetFullPath(localPath), StringComparison.OrdinalIgnoreCase))
+                    {
+                        // restart with updated inactivity
+                        _autoSyncService.Stop();
+                        _autoSyncService.Start(localPath, inactivitySeconds);
+                        return;
+                    }
+
+                    _autoSyncService.Dispose();
+                    _autoSyncService = null;
+                }
+
+                _autoSyncService = new AutoSyncService(this, _logger);
+                _autoSyncService.Start(localPath, inactivitySeconds);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("Failed to start auto-sync.", ex);
+            }
+        }
+    }
+
+    private void StopAutoSync()
+    {
+        lock (_autoSyncSync)
+        {
+            try
+            {
+                if (_autoSyncService is not null)
+                {
+                    _autoSyncService.Dispose();
+                    _autoSyncService = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("Failed to stop auto-sync.", ex);
+            }
+        }
+    }
 }
+

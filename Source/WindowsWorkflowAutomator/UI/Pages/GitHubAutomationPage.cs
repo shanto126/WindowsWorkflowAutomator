@@ -16,6 +16,11 @@ public sealed class GitHubAutomationPage : UserControl
     private readonly ListBox _changedFilesList = new();
     private readonly ListBox _activityList = new();
 
+    // New controls for sync mode
+    private readonly ComboBox _syncModeCombo = new();
+    private readonly ComboBox _inactivityCombo = new();
+    private readonly Label _autoSyncStatusLabel = new();
+
     private bool _tokenEdited;
 
     public GitHubAutomationPage(IGitHubService gitHubService)
@@ -72,6 +77,17 @@ public sealed class GitHubAutomationPage : UserControl
         AddFieldRow(form, 3, "Commit template", _templateBox);
         AddFieldRow(form, 4, "Personal Access Token", _patBox);
 
+        // Sync mode and inactivity settings
+        _syncModeCombo.DropDownStyle = ComboBoxStyle.DropDownList;
+        _syncModeCombo.Items.AddRange(new object[] { "Manual", "Smart Auto Sync", "Scheduled (Coming Soon)" });
+        _syncModeCombo.SelectedIndex = 0;
+
+        _inactivityCombo.DropDownStyle = ComboBoxStyle.DropDownList;
+        _inactivityCombo.Items.AddRange(new object[] { "30 seconds", "1 minute", "5 minutes" });
+        _inactivityCombo.SelectedIndex = 0;
+
+        AddFieldRow(form, 5, "Sync mode", _syncModeCombo, _inactivityCombo);
+
         var tokenNote = new Label
         {
             Text = "Token is stored encrypted in local app settings. Leave empty to keep existing token.",
@@ -96,6 +112,10 @@ public sealed class GitHubAutomationPage : UserControl
         _statusLabel.Dock = DockStyle.Top;
         _statusLabel.Padding = new Padding(0, 8, 0, 4);
         _statusLabel.Text = "Status: configure a repository first.";
+
+        _autoSyncStatusLabel.Dock = DockStyle.Top;
+        _autoSyncStatusLabel.Padding = new Padding(0, 2, 0, 8);
+        _autoSyncStatusLabel.Text = "Auto-sync: Disabled";
 
         var changedFilesLabel = new Label
         {
@@ -141,6 +161,7 @@ public sealed class GitHubAutomationPage : UserControl
 
         var body = new Panel { Dock = DockStyle.Fill };
         body.Controls.Add(split);
+        body.Controls.Add(_autoSyncStatusLabel);
         body.Controls.Add(_statusLabel);
         body.Controls.Add(actions);
         body.Controls.Add(_commitMessageBox);
@@ -165,6 +186,27 @@ public sealed class GitHubAutomationPage : UserControl
             {
                 _patBox.PlaceholderText = "Token already stored";
             }
+
+            // Sync mode UI
+            if (config.SyncMode == GitHubSyncMode.SmartAutoSync)
+            {
+                _syncModeCombo.SelectedItem = "Smart Auto Sync";
+            }
+            else
+            {
+                _syncModeCombo.SelectedItem = "Manual";
+            }
+
+            _inactivityCombo.SelectedIndex = config.InactivitySeconds switch
+            {
+                60 => 1,
+                300 => 2,
+                _ => 0
+            };
+
+            _autoSyncStatusLabel.Text = config.SyncMode == GitHubSyncMode.SmartAutoSync
+                ? $"Auto-sync: Watching (inactivity {config.InactivitySeconds}s)"
+                : "Auto-sync: Disabled";
         }
 
         await RefreshStatusAsync();
@@ -188,12 +230,29 @@ public sealed class GitHubAutomationPage : UserControl
     private async void OnSaveConfiguration(object? sender, EventArgs e)
     {
         var token = _tokenEdited ? _patBox.Text : null;
+        // Determine sync settings
+        var selectedSync = _syncModeCombo.SelectedItem?.ToString() ?? "Manual";
+        var syncMode = selectedSync switch
+        {
+            "Smart Auto Sync" => GitHubSyncMode.SmartAutoSync,
+            _ => GitHubSyncMode.Manual
+        };
+
+        var inactivitySeconds = _inactivityCombo.SelectedIndex switch
+        {
+            1 => 60,
+            2 => 300,
+            _ => 30
+        };
+
         var result = await _gitHubService.ConfigureRepositoryAsync(
             _localPathBox.Text,
             _remoteUrlBox.Text,
             _branchBox.Text,
             _templateBox.Text,
-            token);
+            token,
+            syncMode,
+            inactivitySeconds);
 
         ShowResult(result, "Configuration");
         if (result.Succeeded)

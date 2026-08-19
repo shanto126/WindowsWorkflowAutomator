@@ -12,5 +12,11 @@ public sealed class GitHubRepository
 
     public string CommitMessageTemplate { get; set; } = "chore: backup changes";
 
+    // New: Sync mode for smart auto-sync (Manual / SmartAutoSync / Scheduled)
+    public string SyncMode { get; set; } = "Manual";
+
+    // New: Inactivity delay in seconds to wait before auto-commit when SmartAutoSync is enabled
+    public int InactivitySeconds { get; set; } = 30;
+
     public DateTimeOffset UpdatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
 }

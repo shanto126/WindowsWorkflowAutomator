@@ -79,17 +79,29 @@ public sealed class AppDbContext : DbContext
                 IsEnabled INTEGER NOT NULL
             );
             """);
-        Database.ExecuteSqlRaw(
-            """
-            CREATE TABLE IF NOT EXISTS GitHubRepositories (
-                Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                LocalPath TEXT NOT NULL,
-                RemoteUrl TEXT NOT NULL,
-                Branch TEXT NOT NULL,
-                CommitMessageTemplate TEXT NOT NULL,
-                UpdatedAtUtc TEXT NOT NULL
-            );
-            """);
+        Database.ExecuteSqlRaw(@"CREATE TABLE IF NOT EXISTS GitHubRepositories (
+                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        LocalPath TEXT NOT NULL,
+                        RemoteUrl TEXT NOT NULL,
+                        Branch TEXT NOT NULL,
+                        CommitMessageTemplate TEXT NOT NULL,
+                        SyncMode TEXT NOT NULL DEFAULT 'Manual',
+                        InactivitySeconds INTEGER NOT NULL DEFAULT 30,
+                        UpdatedAtUtc TEXT NOT NULL
+                    );");
+
+        // Ensure older databases get added columns if they are missing. SQLite ALTER TABLE will fail if the column exists, so ignore exceptions.
+        try
+        {
+                    Database.ExecuteSqlRaw("ALTER TABLE GitHubRepositories ADD COLUMN SyncMode TEXT NOT NULL DEFAULT 'Manual';");
+        }
+        catch { /* ignore if already exists */ }
+
+        try
+        {
+                    Database.ExecuteSqlRaw("ALTER TABLE GitHubRepositories ADD COLUMN InactivitySeconds INTEGER NOT NULL DEFAULT 30;");
+        }
+        catch { /* ignore if already exists */ }
         Database.ExecuteSqlRaw(
             """
             CREATE TABLE IF NOT EXISTS WorkflowActions (
