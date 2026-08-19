@@ -9,7 +9,7 @@ This file is the team handoff document. **Read it first** in every new Cursor/Cl
 | Phase | Name | Status |
 | --- | --- | --- |
 | 1 | Architecture + GUI shell | Done |
-| 2 | Workflow Automation | Not started |
+| 2 | Workflow Automation | Done |
 | 3 | File Organizer | Done |
 | 4 | Scheduler | Not started |
 | 5 | GitHub Automation | Not started |
