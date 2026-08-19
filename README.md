@@ -4,6 +4,8 @@ A Windows desktop application for organizing everyday computer work: launching a
 
 This repository is a **university C# project** with an industry-style layout. Features are added in phases. Phase 1 is the foundation only.
 
+Team members: read **[PROJECT_STATUS.md](PROJECT_STATUS.md)** at the start of every session so you know the current phase, owner, and next step.
+
 ## Current status
 
 Phase 1 — architecture and GUI shell:
