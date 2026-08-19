@@ -12,11 +12,12 @@ public sealed class SocialMediaManagerPage : UserControl
     private readonly ILinkedInService _linkedIn;
     private readonly IAppSettingsService _settings;
     private readonly IAppLogger _logger;
+    private readonly IEnumerable<WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter> _platformAdapters;
 
     private readonly TextBox _folderBox = new();
     private readonly NumericUpDown _postCount = new();
     private readonly NumericUpDown _imagesPerPost = new();
-    private readonly ComboBox _platformBox = new();
+    private readonly CheckedListBox _platformList = new();
     private readonly ComboBox _captionModeBox = new();
     private readonly TextBox _captionBox = new();
     private readonly TextBox _facebookAppIdBox = new();
@@ -35,13 +36,15 @@ public sealed class SocialMediaManagerPage : UserControl
         IFacebookService facebook,
         ILinkedInService linkedIn,
         IAppSettingsService settings,
-        IAppLogger logger)
+        IAppLogger logger,
+        IEnumerable<WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter> platformAdapters)
     {
         _socialMedia = socialMedia;
         _facebook = facebook;
         _linkedIn = linkedIn;
         _settings = settings;
         _logger = logger;
+        _platformAdapters = platformAdapters;
 
         Dock = DockStyle.Fill;
         BackColor = Color.FromArgb(246, 248, 252);
@@ -81,11 +84,12 @@ public sealed class SocialMediaManagerPage : UserControl
         _imagesPerPost.Maximum = 20;
         _imagesPerPost.Value = 2;
 
-        _platformBox.DropDownStyle = ComboBoxStyle.DropDownList;
-        _platformBox.Items.Add(new PlatformChoice(SocialPlatform.Facebook, "Facebook"));
-        _platformBox.Items.Add(new PlatformChoice(SocialPlatform.LinkedIn, "LinkedIn (Coming Soon)"));
-        _platformBox.SelectedIndex = 0;
-        _platformBox.SelectedIndexChanged += (_, _) => UpdatePlatformState();
+        _platformList.CheckOnClick = true;
+        _platformList.Dock = DockStyle.Fill;
+        _platformList.Height = 80; // reasonable default
+
+        // Platforms will be populated during OnLoad from registered adapters
+        _platformList.ItemCheck += (_, _) => UpdatePlatformState();
 
         _captionModeBox.DropDownStyle = ComboBoxStyle.DropDownList;
         _captionModeBox.Items.Add(CaptionMode.Manual);
@@ -114,11 +118,11 @@ public sealed class SocialMediaManagerPage : UserControl
         AddField(setup, 0, "Image folder", _folderBox, CreateButton("Browse…", OnBrowseFolder));
         AddField(setup, 1, "Post count", _postCount);
         AddField(setup, 2, "Images per post", _imagesPerPost);
-        AddField(setup, 3, "Platform", _platformBox);
+        AddField(setup, 3, "Platforms", _platformList);
         AddField(setup, 4, "Caption mode", _captionModeBox);
         AddField(setup, 5, "Caption / template", _captionBox);
 
-        _platformNote.Text = "LinkedIn integration is currently under development and will be available in a future update.";
+        _platformNote.Text = string.Empty;
         _platformNote.AutoSize = true;
         _platformNote.ForeColor = Color.FromArgb(180, 83, 9);
         _platformNote.Visible = false;
@@ -252,18 +256,45 @@ public sealed class SocialMediaManagerPage : UserControl
             : "Token already stored";
 
         UpdatePlatformState();
+            PopulatePlatforms();
         await RefreshQueueAsync();
         await RefreshFacebookStatusAsync();
     }
 
     private void UpdatePlatformState()
     {
-        var linkedInSelected = GetPlatform() == SocialPlatform.LinkedIn;
-        _platformNote.Visible = linkedInSelected;
+        // Show a note if any selected platform is Coming Soon
+        var anyComingSoon = _platformList.CheckedItems.Cast<object>()
+            .OfType<PlatformItem>()
+            .Any(item => !item.Supported);
+        _platformNote.Visible = anyComingSoon;
+        _platformNote.Text = anyComingSoon ? "One or more selected platforms are coming soon and cannot publish." : string.Empty;
     }
 
-    private SocialPlatform GetPlatform() =>
-        _platformBox.SelectedItem is PlatformChoice choice ? choice.Value : SocialPlatform.Facebook;
+    private IReadOnlyList<SocialPlatform> GetSelectedPlatforms()
+    {
+        return _platformList.CheckedItems.Cast<object>()
+            .OfType<PlatformItem>()
+            .Select(i => i.Platform)
+            .ToList();
+    }
+
+    private void PopulatePlatforms()
+    {
+        _platformList.Items.Clear();
+        if (_platformAdapters is null)
+        {
+            // Fallback to Facebook only
+            _platformList.Items.Add(new PlatformItem(SocialPlatform.Facebook, "Facebook", true));
+            return;
+        }
+
+        foreach (var adapter in _platformAdapters.OrderBy(a => a.DisplayName))
+        {
+            var item = new PlatformItem(adapter.Platform, adapter.DisplayName, adapter.IsSupported);
+            _platformList.Items.Add(item, adapter.Platform == SocialPlatform.Facebook);
+        }
+    }
 
     private CaptionMode GetCaptionMode() =>
         _captionModeBox.SelectedItem is CaptionMode mode ? mode : CaptionMode.Manual;
@@ -286,12 +317,12 @@ public sealed class SocialMediaManagerPage : UserControl
     {
         try
         {
-            var platform = GetPlatform();
+            var selectedPlatforms = GetSelectedPlatforms();
             var mode = GetCaptionMode();
 
-            if (platform == SocialPlatform.LinkedIn)
+            if (selectedPlatforms.Count == 0)
             {
-                ShowWarning("LinkedIn integration is currently under development and will be available in a future update.");
+                ShowWarning("Select at least one platform to create drafts for.");
                 return;
             }
 
@@ -301,17 +332,31 @@ public sealed class SocialMediaManagerPage : UserControl
                 return;
             }
 
-            var created = await _socialMedia.CreateDraftsFromFolderAsync(new SocialFolderDraftRequest
+            var totalCreated = 0;
+            foreach (var platform in selectedPlatforms)
             {
-                FolderPath = _folderBox.Text,
-                Platform = platform,
-                PostCount = (int)_postCount.Value,
-                ImagesPerPost = (int)_imagesPerPost.Value,
-                CaptionMode = mode,
-                CaptionInput = _captionBox.Text
-            });
+                // If platform is coming soon, skip creating drafts but inform the user
+                var adapter = _platformAdapters.FirstOrDefault(a => a.Platform == platform);
+                if (adapter is not null && !adapter.IsSupported)
+                {
+                    AppendActivity($"Skipped {platform}: coming soon.");
+                    continue;
+                }
 
-            AppendActivity($"Created {created.Count} draft post(s).");
+                var created = await _socialMedia.CreateDraftsFromFolderAsync(new SocialFolderDraftRequest
+                {
+                    FolderPath = _folderBox.Text,
+                    Platform = platform,
+                    PostCount = (int)_postCount.Value,
+                    ImagesPerPost = (int)_imagesPerPost.Value,
+                    CaptionMode = mode,
+                    CaptionInput = _captionBox.Text
+                });
+
+                totalCreated += created.Count;
+            }
+
+            AppendActivity($"Created {totalCreated} draft post(s).");
             await RefreshQueueAsync();
         }
         catch (Exception ex)
@@ -416,22 +461,30 @@ public sealed class SocialMediaManagerPage : UserControl
             return;
         }
 
-        if (post.Platform == SocialPlatform.LinkedIn)
+        // Determine adapter for the post's platform
+        var adapter = _platformAdapters.FirstOrDefault(a => a.Platform == post.Platform);
+        if (adapter is null)
         {
-            var linkedInResult = await _linkedIn.CreatePostAsync(post.ResolvedCaption, post.Images.Select(x => x.FilePath).ToArray());
-            ShowWarning(linkedInResult.Message);
-            AppendActivity(linkedInResult.Message);
+            ShowWarning("No adapter available for the selected platform.");
+            return;
+        }
+
+        if (!adapter.IsSupported)
+        {
+            var coming = PlatformOperationResult.Fail(PlatformOperationStatus.ComingSoon, "This platform is coming soon and cannot publish.");
+            ShowWarning(coming.Message);
+            AppendActivity(coming.Message);
             return;
         }
 
         await _socialMedia.SetProcessingAsync(post.Id);
         await RefreshQueueAsync();
 
-        var publish = await _facebook.CreatePostAsync(post.ResolvedCaption, post.Images.Select(x => x.FilePath).ToArray());
+        var publish = await adapter.CreatePostAsync(post.ResolvedCaption, post.Images.Select(x => x.FilePath).ToArray());
         if (publish.Succeeded)
         {
             await _socialMedia.MarkPublishedAsync(post.Id);
-            AppendActivity("Facebook post published successfully.");
+            AppendActivity($"{adapter.DisplayName} post published successfully.");
         }
         else
         {
@@ -441,7 +494,11 @@ public sealed class SocialMediaManagerPage : UserControl
         }
 
         await RefreshQueueAsync();
-        await RefreshFacebookStatusAsync();
+        // Refresh Facebook status if adapter is Facebook
+        if (adapter.Platform == SocialPlatform.Facebook)
+        {
+            await RefreshFacebookStatusAsync();
+        }
     }
 
     private async void OnConnectFacebook(object? sender, EventArgs e)

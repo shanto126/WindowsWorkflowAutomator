@@ -3,5 +3,9 @@ namespace WindowsWorkflowAutomator.Models;
 public enum SocialPlatform
 {
     Facebook,
-    LinkedIn
+    LinkedIn,
+    Instagram,
+    X,
+    YouTube,
+    TikTok
 }

@@ -49,6 +49,14 @@ internal static class AppComposition
         builder.Services.AddSingleton<ISocialMediaService, SocialMediaService>();
         builder.Services.AddSingleton<IFacebookService, FacebookService>();
         builder.Services.AddSingleton<ILinkedInService, LinkedInComingSoonService>();
+
+        // Social platform adapters
+        builder.Services.AddSingleton<WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter, WindowsWorkflowAutomator.SocialMedia.Adapters.FacebookPlatformAdapter>();
+        builder.Services.AddSingleton<WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter, WindowsWorkflowAutomator.SocialMedia.Adapters.LinkedInPlatformAdapter>();
+        builder.Services.AddSingleton<WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter, WindowsWorkflowAutomator.SocialMedia.Adapters.InstagramPlatformAdapter>();
+        builder.Services.AddSingleton<WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter, WindowsWorkflowAutomator.SocialMedia.Adapters.XPlatformAdapter>();
+        builder.Services.AddSingleton<WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter, WindowsWorkflowAutomator.SocialMedia.Adapters.YouTubePlatformAdapter>();
+        builder.Services.AddSingleton<WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter, WindowsWorkflowAutomator.SocialMedia.Adapters.TikTokPlatformAdapter>();
         builder.Services.AddSingleton<ApplicationStartup>();
         builder.Services.AddSingleton<ModuleNavigator>();
         builder.Services.AddTransient<DashboardPage>();
