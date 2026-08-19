@@ -54,8 +54,9 @@ Owner for Phase 2 (planned): **Emam** — confirm before starting so two people 
 
 - **By:** Shanto
 - **Date:** 2026-08-19
-- **Branch:** `feature/foundation-setup`
-- **Last commit:** `623edd8` — `feat: initial project architecture, navigation, DB context, logging, and settings infrastructure`
+- **Branch:** `feature/foundation-setup` (pushed to GitHub)
+- **Remote:** https://github.com/shanto126/WindowsWorkflowAutomator
+- **Last commit:** `82f3807` — `docs: add PROJECT_STATUS.md for team handoff tracking`
 
 ## 5. Next Steps
 
@@ -70,8 +71,9 @@ Exact instruction for whoever continues:
 
 ## 6. Known Issues / Blockers
 
-- GitHub Desktop or collaborators: add **Emam** and **Toriqul** under GitHub → Settings → Collaborators.
-- `gh` CLI is not installed on Shanto’s machine; first push used `git` + remote `origin`.
+- GitHub repo is live: https://github.com/shanto126/WindowsWorkflowAutomator — add **Emam** and **Toriqul** under Settings → Collaborators.
+- GitHub default branch on the empty repo was `main`; team work is on `feature/foundation-setup` until you merge.
+- `gh` CLI is not required for pull/push if GitHub Desktop or Git Credential Manager is used.
 - No GitHub Actions yet (not required for Phase 1).
 - Feature modules are placeholders only — do not treat them as implemented.
 
