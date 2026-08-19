@@ -2,7 +2,7 @@
 
 A Windows desktop application for organizing everyday computer work: launching apps and websites, automating simple workflows, organizing files, scheduling tasks, and keeping activity logs.
 
-This repository is a **university C# project** with an industry-style layout. Features are added in phases. Phase 1 is the foundation only.
+This repository is a **university C# project** with an industry-style layout. Features are added in phases. Phase 1 (foundation) and Phase 3 (File Organizer) are in place.
 
 Team members: read **[PROJECT_STATUS.md](PROJECT_STATUS.md)** at the start of every session so you know the current phase, owner, and next step.
 
@@ -17,7 +17,13 @@ Phase 1 — architecture and GUI shell:
 - File logging and JSON user settings
 - Main window with sidebar navigation and placeholder module pages
 
-Feature modules (workflow engine, file organizer, GitHub, Facebook, license keys, and so on) are **not implemented yet**. LinkedIn is shown as **Coming Soon**.
+Phase 3 — File Organizer:
+
+- Extension-based rules (move / copy / rename)
+- Download folder monitor (`FileSystemWatcher`)
+- File Organizer page: folder picker, rule list, monitoring toggle, activity log
+
+Other feature modules (workflow engine, GitHub, Facebook, license keys, and so on) are **not implemented yet**. LinkedIn is shown as **Coming Soon**.
 
 ## Requirements
 

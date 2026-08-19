@@ -25,7 +25,7 @@ public sealed class ApplicationStartup
 
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        db.Database.EnsureCreated();
+        db.EnsureSchema();
 
         _logger.Information("Application initialized.");
     }

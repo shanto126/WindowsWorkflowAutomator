@@ -18,6 +18,10 @@ Windows Workflow Automator is a WinForms desktop app. The UI is a shell: a sideb
 
 `Host.CreateApplicationBuilder()` gives configuration, DI, and lifetimes without a custom container. Forms request services through constructors. `DbContext` is scoped; the UI form is a singleton for the process lifetime.
 
-## What is intentionally missing
+## File Organizer (Phase 3)
 
-Workflow execution, file watching, GitHub/Facebook clients, license validation, and premium gating. Those belong to later phases.
+Rules live in SQLite (`FileOrganizationRules`). `IFileRuleService` and `IFileOrganizerService` own matching, move/copy/rename, duplicates, and locked files. `IDownloadFolderMonitor` uses `FileSystemWatcher` and waits until a file can be opened exclusively. The File Organizer page is UI only.
+
+## What is still intentionally missing
+
+Workflow execution, GitHub/Facebook clients, the scheduler, license validation, and premium gating. Those belong to later phases.

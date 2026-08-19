@@ -1,3 +1,7 @@
+using WindowsWorkflowAutomator.Configuration;
+using WindowsWorkflowAutomator.FileOrganizer;
+using WindowsWorkflowAutomator.Logging;
+
 namespace WindowsWorkflowAutomator.UI.Pages;
 
 public sealed class DashboardPage() : PlaceholderPage(
@@ -16,13 +20,18 @@ public sealed class WebsiteLauncherPage() : PlaceholderPage(
     "Website Launcher",
     "Open frequently used websites in the default browser.");
 
-public sealed class FileOrganizerPage() : PlaceholderPage(
-    "File Organizer",
-    "Sort files into folders by type, date, or custom rules.");
-
-public sealed class DownloadMonitorPage() : PlaceholderPage(
-    "Download Folder Monitor",
-    "Watch the Downloads folder and apply organizer rules.");
+public sealed class DownloadMonitorPage : FileOrganizerPage
+{
+    public DownloadMonitorPage(
+        IFileRuleService rules,
+        IFileOrganizerService organizer,
+        IDownloadFolderMonitor monitor,
+        IAppSettingsService settings,
+        IAppLogger logger)
+        : base(rules, organizer, monitor, settings, logger)
+    {
+    }
+}
 
 public sealed class TaskSchedulerPage() : PlaceholderPage(
     "Task Scheduler",

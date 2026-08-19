@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using WindowsWorkflowAutomator.Configuration;
 using WindowsWorkflowAutomator.Data;
+using WindowsWorkflowAutomator.FileOrganizer;
 using WindowsWorkflowAutomator.Logging;
 using WindowsWorkflowAutomator.Repositories;
 using WindowsWorkflowAutomator.Services;
@@ -34,6 +35,9 @@ internal static class AppComposition
             options.UseSqlite($"Data Source={paths.DatabaseFilePath}"));
 
         builder.Services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
+        builder.Services.AddSingleton<IFileRuleService, FileRuleService>();
+        builder.Services.AddSingleton<IFileOrganizerService, FileOrganizerService>();
+        builder.Services.AddSingleton<IDownloadFolderMonitor, DownloadFolderMonitor>();
         builder.Services.AddSingleton<ApplicationStartup>();
         builder.Services.AddSingleton<ModuleNavigator>();
 
