@@ -9,6 +9,7 @@ public sealed class AppDbContext : DbContext
     }
     public DbSet<ActivityLogEntry> ActivityLogs => Set<ActivityLogEntry>();
     public DbSet<FileOrganizationRule> FileOrganizationRules => Set<FileOrganizationRule>();
+    public DbSet<GitHubRepository> GitHubRepositories => Set<GitHubRepository>();
     public DbSet<Workflow> Workflows => Set<Workflow>();
     public DbSet<WorkflowAction> WorkflowActions => Set<WorkflowAction>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -27,6 +28,14 @@ public sealed class AppDbContext : DbContext
             entity.Property(x => x.DestinationFolder).HasMaxLength(1024).IsRequired();
             entity.Property(x => x.Action).HasConversion<string>().HasMaxLength(32);
             entity.Property(x => x.RenamePattern).HasMaxLength(256);
+        });
+        modelBuilder.Entity<GitHubRepository>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.LocalPath).HasMaxLength(1024).IsRequired();
+            entity.Property(x => x.RemoteUrl).HasMaxLength(1024).IsRequired();
+            entity.Property(x => x.Branch).HasMaxLength(255).IsRequired();
+            entity.Property(x => x.CommitMessageTemplate).HasMaxLength(300).IsRequired();
         });
         modelBuilder.Entity<Workflow>(entity =>
         {
@@ -68,6 +77,17 @@ public sealed class AppDbContext : DbContext
                 Name TEXT NOT NULL,
                 Description TEXT NOT NULL,
                 IsEnabled INTEGER NOT NULL
+            );
+            """);
+        Database.ExecuteSqlRaw(
+            """
+            CREATE TABLE IF NOT EXISTS GitHubRepositories (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                LocalPath TEXT NOT NULL,
+                RemoteUrl TEXT NOT NULL,
+                Branch TEXT NOT NULL,
+                CommitMessageTemplate TEXT NOT NULL,
+                UpdatedAtUtc TEXT NOT NULL
             );
             """);
         Database.ExecuteSqlRaw(

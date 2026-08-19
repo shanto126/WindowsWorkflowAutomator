@@ -8,11 +8,13 @@ using WindowsWorkflowAutomator.Data;
 using WindowsWorkflowAutomator.FileOrganizer;
 using WindowsWorkflowAutomator.Logging;
 using WindowsWorkflowAutomator.Repositories;
+using WindowsWorkflowAutomator.Security;
 using WindowsWorkflowAutomator.Services;
 using WindowsWorkflowAutomator.Services.Automation;
 using WindowsWorkflowAutomator.UI;
 using WindowsWorkflowAutomator.UI.Navigation;
 using WindowsWorkflowAutomator.UI.Pages;
+using WindowsWorkflowAutomator.GitHub;
 namespace WindowsWorkflowAutomator;
 internal static class AppComposition
 {
@@ -28,6 +30,7 @@ internal static class AppComposition
         builder.Services.AddSingleton(paths);
         builder.Services.AddSingleton<IAppLogger, FileAppLogger>();
         builder.Services.AddSingleton<IAppSettingsService, AppSettingsService>();
+        builder.Services.AddSingleton<ISecretProtector, WindowsSecretProtector>();
         builder.Services.AddDbContext<AppDbContext>(options =>
             options.UseSqlite($"Data Source={paths.DatabaseFilePath}"));
         builder.Services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
@@ -41,6 +44,7 @@ internal static class AppComposition
         builder.Services.AddSingleton<IWorkflowAction, OpenFolderAction>();
         builder.Services.AddSingleton<WorkflowActionFactory>();
         builder.Services.AddSingleton<IWorkflowService, WorkflowService>();
+        builder.Services.AddSingleton<IGitHubService, GitHubService>();
         builder.Services.AddSingleton<ApplicationStartup>();
         builder.Services.AddSingleton<ModuleNavigator>();
         builder.Services.AddTransient<DashboardPage>();

@@ -9,4 +9,6 @@ public sealed class AppSettings
     public string FileOrganizerWatchFolder { get; set; } = string.Empty;
 
     public bool FileOrganizerMonitoringEnabled { get; set; }
+
+    public string GitHubPatProtected { get; set; } = string.Empty;
 }
