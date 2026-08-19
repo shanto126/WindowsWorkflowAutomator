@@ -2,11 +2,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using WindowsWorkflowAutomator.Automation;
 using WindowsWorkflowAutomator.Configuration;
 using WindowsWorkflowAutomator.Data;
 using WindowsWorkflowAutomator.Logging;
 using WindowsWorkflowAutomator.Repositories;
 using WindowsWorkflowAutomator.Services;
+using WindowsWorkflowAutomator.Services.Automation;
 using WindowsWorkflowAutomator.UI;
 using WindowsWorkflowAutomator.UI.Navigation;
 using WindowsWorkflowAutomator.UI.Pages;
@@ -34,6 +36,13 @@ internal static class AppComposition
             options.UseSqlite($"Data Source={paths.DatabaseFilePath}"));
 
         builder.Services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
+        builder.Services.AddSingleton<IProcessLauncher, ProcessLauncher>();
+        builder.Services.AddSingleton<IUrlReachabilityService, HttpUrlReachabilityService>();
+        builder.Services.AddSingleton<IWorkflowAction, OpenApplicationAction>();
+        builder.Services.AddSingleton<IWorkflowAction, OpenWebsiteAction>();
+        builder.Services.AddSingleton<IWorkflowAction, OpenFolderAction>();
+        builder.Services.AddSingleton<WorkflowActionFactory>();
+        builder.Services.AddSingleton<IWorkflowService, WorkflowService>();
         builder.Services.AddSingleton<ApplicationStartup>();
         builder.Services.AddSingleton<ModuleNavigator>();
 
