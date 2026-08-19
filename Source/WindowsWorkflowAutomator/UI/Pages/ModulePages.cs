@@ -8,10 +8,6 @@ public sealed class DashboardPage() : PlaceholderPage(
     "Dashboard",
     "High-level overview of workflows, recent activity, and system status.");
 
-public sealed class WorkflowAutomationPage() : PlaceholderPage(
-    "Workflow Automation",
-    "Create and run automation sequences. Implementation starts in a later phase.");
-
 public sealed class ApplicationLauncherPage() : PlaceholderPage(
     "Application Launcher",
     "Launch installed desktop applications from a saved list.");
