@@ -11,4 +11,10 @@ public sealed class AppSettings
     public bool FileOrganizerMonitoringEnabled { get; set; }
 
     public string GitHubPatProtected { get; set; } = string.Empty;
+
+    public string FacebookAppId { get; set; } = string.Empty;
+
+    public string FacebookPageId { get; set; } = string.Empty;
+
+    public string FacebookAccessTokenProtected { get; set; } = string.Empty;
 }

@@ -4,7 +4,7 @@ This file is the team handoff document. **Read it first** in every new Cursor/Cl
 
 ## 1. Current Phase
 
-**Phase 5 of 12 — GitHub Automation — COMPLETED**
+**Phase 8 of 12 — LinkedIn (Coming Soon) — COMPLETED**
 
 | Phase | Name | Status |
 | --- | --- | --- |
@@ -13,9 +13,9 @@ This file is the team handoff document. **Read it first** in every new Cursor/Cl
 | 3 | File Organizer | Done |
 | 4 | Scheduler | Not started |
 | 5 | GitHub Automation | Done |
-| 6 | Social Media Manager | Not started |
-| 7 | Facebook API | Not started |
-| 8 | LinkedIn (Coming Soon) | Not started |
+| 6 | Social Media Manager | Done |
+| 7 | Facebook API | Done |
+| 8 | LinkedIn (Coming Soon) | Done |
 | 9 | Free/Premium + License | Not started |
 | 10 | Testing + Error Handling | Not started |
 | 11 | UI Polish | Not started |
@@ -38,15 +38,16 @@ This file is the team handoff document. **Read it first** in every new Cursor/Cl
 - [x] File Organizer (rule CRUD, move/copy/rename, File Organizer page)
 - [x] Download Folder Monitor (`FileSystemWatcher`, waits for complete files)
 - [x] GitHub Automation (configure repo, status, local commit, manual push button with confirmation, activity logging)
+- [x] Social Media Manager (queue UI, image-folder split, Draft/Pending/Scheduled/Processing/Published/Failed/Cancelled statuses)
+- [x] Facebook Integration wiring (official Graph API service, token-secured storage, explicit connect/validate/publish flow, not-configured state)
+- [x] LinkedIn Coming Soon guard (`ILinkedInService` returns clear coming-soon result; queue/publish blocked)
 - [ ] Workflow Automation (feature code)
 - [ ] Task Scheduler
-- [ ] Social Media / Facebook
-- [ ] LinkedIn Coming Soon page content beyond placeholder
 - [ ] License key / Free vs Premium logic
 
 ## 3. In-Progress Module
 
-**None.** Phase 5 GitHub Automation is complete and committed locally on `feature/phase5-github-automation`. Wait for review before starting Phase 6.
+**None.** Phases 5-8 are complete and committed locally on `feature/phase5-github-automation`. Wait for review before starting Phase 9.
 
 Do not implement Workflow, GitHub, Social Media, or Scheduler in a File Organizer session.
 
@@ -55,19 +56,19 @@ Do not implement Workflow, GitHub, Social Media, or Scheduler in a File Organize
 - **By:** Shanto
 - **Date:** 2026-08-19
 - **Branch:** `feature/phase5-github-automation`
-- **Last commit:** (pending this session) GitHub automation service + UI + persistence + tests
+- **Last commit:** (pending this session) Social Media Manager + Facebook integration + LinkedIn coming-soon module
 
 ## 5. Next Steps
 
 Exact instruction for whoever continues:
 
-1. Review and approve the Phase 5 local commit on `feature/phase5-github-automation`.
+1. Review and approve local commits for Phases 5-8 on `feature/phase5-github-automation`.
 2. In Cursor, first read `PROJECT_STATUS.md`, `README.md`, and `Documentation/Architecture.md`. Summarize status **before writing code**.
 3. Do **not** re-create the solution or fill every remaining module at once.
-4. Next planned work after approval: start **Phase 6 (Social Media Manager UI + Queue)** only.
-5. Keep business logic out of Form classes. Use service layer under `Services/SocialMedia` or `SocialMedia/`.
+4. Next planned work after approval: start **Phase 9 (Free/Premium + License System)**.
+5. Keep business logic out of Form classes. Use service layer under `Licensing/` and `Security/`.
 6. Cycle: Plan → Implement → Build → Test → Fix → Commit (local) → Update this file.
-7. Do not enable scheduled/automatic GitHub push in this branch.
+7. Do not enable scheduled/automatic GitHub push until Scheduler phase is explicitly started.
 
 ## 6. Known Issues / Blockers
 
@@ -76,6 +77,8 @@ Exact instruction for whoever continues:
 - No GitHub Actions yet (not required for Phase 1).
 - Existing SQLite databases created in Phase 1 get the rules table via `CREATE TABLE IF NOT EXISTS` in `AppDbContext.EnsureSchema()`.
 - Existing SQLite databases now also get `GitHubRepositories` via `CREATE TABLE IF NOT EXISTS` in `AppDbContext.EnsureSchema()`.
+- Facebook integration uses App ID + Page ID + encrypted access token. If missing, UI shows "Facebook integration is not configured." and publish is blocked.
+- LinkedIn is intentionally disabled and always returns a clear coming-soon result.
 - File Organizer watches the **top level** of the selected folder only (no subfolders).
 - Incomplete downloads (`.crdownload`, `.tmp`, `.part`, etc.) are ignored until the final file name appears.
 
@@ -83,7 +86,7 @@ Exact instruction for whoever continues:
 
 - **Last confirmed:** 2026-08-19
 - **Result:** Clean build — **0 errors, 0 warnings**
-- **Tests:** 12 passed (includes `GitHubAutomationTests` configure+commit local flow)
+- **Tests:** 15 passed (includes `GitHubAutomationTests` and `SocialMediaPlannerTests`)
 - **Run:** `dotnet test WindowsWorkflowAutomator.sln`
 - **Command:** `dotnet build WindowsWorkflowAutomator.sln`
 
