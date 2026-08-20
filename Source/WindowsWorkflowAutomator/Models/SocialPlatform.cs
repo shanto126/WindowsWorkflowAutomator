@@ -7,5 +7,7 @@ public enum SocialPlatform
     Instagram,
     X,
     YouTube,
-    TikTok
+    TikTok,
+    Reddit,
+    Snapchat
 }

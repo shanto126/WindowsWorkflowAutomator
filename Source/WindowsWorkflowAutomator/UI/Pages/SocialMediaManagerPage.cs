@@ -13,6 +13,7 @@ public sealed class SocialMediaManagerPage : UserControl
     private readonly IAppSettingsService _settings;
     private readonly IAppLogger _logger;
     private readonly IEnumerable<WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter> _platformAdapters;
+    private readonly MultiPlatformPostOrchestrator _postOrchestrator;
 
     private readonly TextBox _folderBox = new();
     private readonly FlowLayoutPanel _platformStatusPanel = new();
@@ -21,6 +22,9 @@ public sealed class SocialMediaManagerPage : UserControl
     private readonly CheckedListBox _platformList = new();
     private readonly ComboBox _captionModeBox = new();
     private readonly TextBox _captionBox = new();
+    private readonly TextBox _composeTitleBox = new();
+    private readonly TextBox _composeCaptionBox = new();
+    private readonly TextBox _composeHashtagsBox = new();
     private readonly TextBox _facebookAppIdBox = new();
     private readonly TextBox _facebookPageIdBox = new();
     private readonly TextBox _facebookTokenBox = new();
@@ -38,7 +42,8 @@ public sealed class SocialMediaManagerPage : UserControl
         ILinkedInService linkedIn,
         IAppSettingsService settings,
         IAppLogger logger,
-        IEnumerable<WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter> platformAdapters)
+        IEnumerable<WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter> platformAdapters,
+        MultiPlatformPostOrchestrator postOrchestrator)
     {
         _socialMedia = socialMedia;
         _facebook = facebook;
@@ -46,6 +51,7 @@ public sealed class SocialMediaManagerPage : UserControl
         _settings = settings;
         _logger = logger;
         _platformAdapters = platformAdapters;
+        _postOrchestrator = postOrchestrator;
 
         Dock = DockStyle.Fill;
         BackColor = Color.FromArgb(246, 248, 252);
@@ -134,6 +140,42 @@ public sealed class SocialMediaManagerPage : UserControl
         _platformNote.ForeColor = Color.FromArgb(180, 83, 9);
         _platformNote.Visible = false;
         _platformNote.Dock = DockStyle.Top;
+
+        _composeTitleBox.PlaceholderText = "Post title (required for Reddit / YouTube)";
+        _composeCaptionBox.Multiline = true;
+        _composeCaptionBox.Height = 70;
+        _composeCaptionBox.ScrollBars = ScrollBars.Vertical;
+        _composeCaptionBox.Text = "New product update for today.";
+        _composeHashtagsBox.PlaceholderText = "#summer #launch #social";
+
+        var unifiedTitle = new Label
+        {
+            Text = "Unified compose",
+            Dock = DockStyle.Top,
+            Height = 28,
+            Font = new Font("Segoe UI Semibold", 11F),
+            Padding = new Padding(0, 8, 0, 0)
+        };
+
+        var unifiedCompose = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            ColumnCount = 3,
+            Padding = new Padding(0, 0, 0, 8)
+        };
+        unifiedCompose.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 160));
+        unifiedCompose.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        unifiedCompose.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 130));
+
+        AddField(unifiedCompose, 0, "Title", _composeTitleBox);
+        AddField(unifiedCompose, 1, "Caption", _composeCaptionBox);
+        AddField(unifiedCompose, 2, "Hashtags", _composeHashtagsBox);
+
+        var unifiedButtons = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 40, WrapContents = false };
+        var unifiedPublish = CreateButton("Post Now", OnUnifiedPostNow);
+        unifiedPublish.BackColor = Color.FromArgb(22, 163, 74);
+        unifiedButtons.Controls.Add(unifiedPublish);
 
         var draftButtons = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 40, WrapContents = false };
         draftButtons.Controls.Add(CreateButton("Create drafts", OnCreateDrafts));
@@ -246,6 +288,9 @@ public sealed class SocialMediaManagerPage : UserControl
         body.Controls.Add(facebookConfig);
         body.Controls.Add(facebookTitle);
         body.Controls.Add(draftButtons);
+        body.Controls.Add(unifiedButtons);
+        body.Controls.Add(unifiedCompose);
+        body.Controls.Add(unifiedTitle);
         body.Controls.Add(_platformNote);
         body.Controls.Add(setup);
 
@@ -618,6 +663,65 @@ public sealed class SocialMediaManagerPage : UserControl
         if (adapter.Platform == SocialPlatform.Facebook)
         {
             await RefreshFacebookStatusAsync();
+        }
+    }
+
+    private async void OnUnifiedPostNow(object? sender, EventArgs e)
+    {
+        var selectedPlatforms = GetSelectedPlatforms()
+            .Where(platform => platform != SocialPlatform.LinkedIn && platform != SocialPlatform.X && platform != SocialPlatform.Snapchat)
+            .Distinct()
+            .ToList();
+
+        if (selectedPlatforms.Count == 0)
+        {
+            ShowWarning("Select at least one configured, non-Coming-Soon platform.");
+            return;
+        }
+
+        var folderPath = _folderBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
+        {
+            ShowWarning("Select a valid image folder before posting.");
+            return;
+        }
+
+        var request = new MultiPlatformComposeRequest(
+            selectedPlatforms,
+            folderPath,
+            _composeTitleBox.Text.Trim(),
+            _composeCaptionBox.Text.Trim(),
+            _composeHashtagsBox.Text.Trim(),
+            (int)_postCount.Value,
+            (int)_imagesPerPost.Value);
+
+        try
+        {
+            var results = await _postOrchestrator.PublishAsync(request);
+            foreach (var result in results)
+            {
+                var label = result.Succeeded ? "Published" : result.Status == PlatformOperationStatus.NotConfigured ? "Configuration Required" : "Failed";
+                AppendActivity($"{result.Platform}: {label} - {result.Message}");
+            }
+
+            if (results.Count == 0)
+            {
+                ShowWarning("Select at least one supported platform for the unified post.");
+                return;
+            }
+
+            var failed = results.Count(x => !x.Succeeded && x.Status != PlatformOperationStatus.NotConfigured && x.Status != PlatformOperationStatus.ComingSoon);
+            if (failed > 0)
+            {
+                ShowWarning($"{failed} platform(s) failed to publish. Check the activity log for details.");
+            }
+
+            await RefreshQueueAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.Error("Unified post orchestration failed.", ex);
+            ShowWarning(ex.Message);
         }
     }
 

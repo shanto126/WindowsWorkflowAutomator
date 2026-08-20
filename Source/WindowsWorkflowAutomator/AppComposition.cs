@@ -49,8 +49,11 @@ internal static class AppComposition
         builder.Services.AddSingleton<ISocialMediaService, SocialMediaService>();
         builder.Services.AddSingleton<IFacebookService, FacebookService>();
         builder.Services.AddSingleton<ILinkedInService, LinkedInComingSoonService>();
-        // Instagram service (uses Meta/Graph API). Registered as singleton to match other social services.
         builder.Services.AddSingleton<IInstagramService, InstagramService>();
+        builder.Services.AddSingleton<IYouTubeService, YouTubeService>();
+        builder.Services.AddSingleton<ITikTokService, TikTokService>();
+        builder.Services.AddSingleton<IRedditService, RedditService>();
+        builder.Services.AddSingleton<MultiPlatformPostOrchestrator>();
 
         // Social platform adapters
         builder.Services.AddSingleton<WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter, WindowsWorkflowAutomator.SocialMedia.Adapters.FacebookPlatformAdapter>();
@@ -59,10 +62,8 @@ internal static class AppComposition
         builder.Services.AddSingleton<WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter, WindowsWorkflowAutomator.SocialMedia.Adapters.XPlatformAdapter>();
         builder.Services.AddSingleton<WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter, WindowsWorkflowAutomator.SocialMedia.Adapters.YouTubePlatformAdapter>();
         builder.Services.AddSingleton<WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter, WindowsWorkflowAutomator.SocialMedia.Adapters.TikTokPlatformAdapter>();
-        // Register YouTube service
-        builder.Services.AddSingleton<IYouTubeService, YouTubeService>();
-        // Register TikTok service
-        builder.Services.AddSingleton<ITikTokService, TikTokService>();
+        builder.Services.AddSingleton<WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter, WindowsWorkflowAutomator.SocialMedia.Adapters.RedditPlatformAdapter>();
+        builder.Services.AddSingleton<WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter, WindowsWorkflowAutomator.SocialMedia.Adapters.SnapchatPlatformAdapter>();
         builder.Services.AddSingleton<ApplicationStartup>();
         builder.Services.AddSingleton<ModuleNavigator>();
         builder.Services.AddTransient<DashboardPage>();

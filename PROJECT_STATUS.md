@@ -47,7 +47,10 @@ This file is the team handoff document. **Read it first** in every new Cursor/Cl
 - [x] Instagram Integration wiring (Instagram Graph API via Meta; single-image public-URL publish supported; local-file uploads limited)
 - [x] YouTube Integration wiring (YouTube Data API; multipart upload path implemented; requires OAuth access token configured)
 - [x] TikTok Integration wiring (TikTok adapter + service; public-URL media publish path implemented, local uploads limited)
+- [x] Reddit Integration wiring (official OAuth bearer-token service, subreddit validation, title-required image/text posts, clear config failure states)
+- [x] Unified compose orchestration (single-screen multi-platform publish action with per-platform result summary and queue integration)
 - [x] LinkedIn Coming Soon guard (`ILinkedInService` returns clear coming-soon result; queue/publish blocked)
+- [x] Snapchat Coming Soon adapter (`SnapchatPlatformAdapter` blocks publishing with a clear coming-soon result)
 - [ ] Workflow Automation (feature code)
 - [ ] Task Scheduler
 - [ ] License key / Free vs Premium logic

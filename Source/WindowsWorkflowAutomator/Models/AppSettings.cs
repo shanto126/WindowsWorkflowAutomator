@@ -31,5 +31,13 @@ public sealed class AppSettings
 
     // TikTok settings (store access token protected)
     public string TikTokAccessTokenProtected { get; set; } = string.Empty;
+
+    // Reddit settings (store bearer token protected; client id + subreddit are required by the official OAuth API)
+    public string RedditAccessTokenProtected { get; set; } = string.Empty;
+    public string RedditClientId { get; set; } = string.Empty;
+    public string RedditClientSecretProtected { get; set; } = string.Empty;
+    public string RedditSubreddit { get; set; } = string.Empty;
+    public string RedditUsername { get; set; } = string.Empty;
+    public string RedditPasswordProtected { get; set; } = string.Empty;
 }
 
