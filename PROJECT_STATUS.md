@@ -39,12 +39,13 @@ This file is the team handoff document. **Read it first** in every new Cursor/Cl
 - [x] Download Folder Monitor (`FileSystemWatcher`, waits for complete files)
 - [x] GitHub Automation (configure repo, status, local commit, manual push button with confirmation, activity logging)
 - [x] GitHub Smart Auto-Sync (new: file watcher, debounced auto-commit to local repo; does NOT auto-push)
-- [x] Multi-platform Social Media adapter architecture (ISocialPlatformAdapter + platform adapters). Facebook and Instagram supported; LinkedIn / X / YouTube / TikTok marked Coming Soon.
+- [x] Multi-platform Social Media adapter architecture (ISocialPlatformAdapter + platform adapters). Facebook and Instagram supported; LinkedIn / X Coming Soon; YouTube and TikTok in progress.
 - [x] Social Media Manager UI: multiple platform selection (create drafts for multiple platforms), platform status shown (Supported / Coming Soon).
 - [x] Social Media Manager (queue UI, image-folder split, Draft/Pending/Scheduled/Processing/Published/Failed/Cancelled statuses)
 - [x] Social Media multi-platform adapter architecture (Adapters folder added; Facebook adapter remains the only fully supported platform; others marked Coming Soon)
 - [x] Facebook Integration wiring (official Graph API service, token-secured storage, explicit connect/validate/publish flow, not-configured state)
 - [x] Instagram Integration wiring (Instagram Graph API via Meta; single-image public-URL publish supported; local-file uploads limited)
+- [x] YouTube Integration wiring (YouTube Data API; multipart upload path implemented; requires OAuth access token configured)
 - [x] LinkedIn Coming Soon guard (`ILinkedInService` returns clear coming-soon result; queue/publish blocked)
 - [ ] Workflow Automation (feature code)
 - [ ] Task Scheduler

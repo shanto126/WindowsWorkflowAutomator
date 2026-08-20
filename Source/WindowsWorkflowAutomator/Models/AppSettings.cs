@@ -25,5 +25,8 @@ public sealed class AppSettings
 
     // Instagram Business User ID (ig-user-id) used for publishing via the Graph API.
     public string InstagramUserId { get; set; } = string.Empty;
+
+    // YouTube settings (store access token protected)
+    public string YouTubeAccessTokenProtected { get; set; } = string.Empty;
 }
 
