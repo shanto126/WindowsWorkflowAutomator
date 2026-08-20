@@ -46,6 +46,7 @@ This file is the team handoff document. **Read it first** in every new Cursor/Cl
 - [x] Facebook Integration wiring (official Graph API service, token-secured storage, explicit connect/validate/publish flow, not-configured state)
 - [x] Instagram Integration wiring (Instagram Graph API via Meta; single-image public-URL publish supported; local-file uploads limited)
 - [x] YouTube Integration wiring (YouTube Data API; multipart upload path implemented; requires OAuth access token configured)
+- [x] TikTok Integration wiring (TikTok adapter + service; public-URL media publish path implemented, local uploads limited)
 - [x] LinkedIn Coming Soon guard (`ILinkedInService` returns clear coming-soon result; queue/publish blocked)
 - [ ] Workflow Automation (feature code)
 - [ ] Task Scheduler

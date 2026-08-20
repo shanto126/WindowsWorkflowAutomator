@@ -15,6 +15,7 @@ public sealed class SocialMediaManagerPage : UserControl
     private readonly IEnumerable<WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter> _platformAdapters;
 
     private readonly TextBox _folderBox = new();
+    private readonly FlowLayoutPanel _platformStatusPanel = new();
     private readonly NumericUpDown _postCount = new();
     private readonly NumericUpDown _imagesPerPost = new();
     private readonly CheckedListBox _platformList = new();
@@ -76,6 +77,12 @@ public sealed class SocialMediaManagerPage : UserControl
             Dock = DockStyle.Top
         };
 
+        // Platform status panel (polished UI): shows supported/coming-soon and configured state
+        _platformStatusPanel.Dock = DockStyle.Top;
+        _platformStatusPanel.Height = 48;
+        _platformStatusPanel.Padding = new Padding(0, 8, 0, 8);
+        _platformStatusPanel.AutoSize = true;
+        _platformStatusPanel.WrapContents = false;
         _postCount.Minimum = 1;
         _postCount.Maximum = 100;
         _postCount.Value = 3;
@@ -243,6 +250,7 @@ public sealed class SocialMediaManagerPage : UserControl
         body.Controls.Add(setup);
 
         Controls.Add(body);
+        Controls.Add(_platformStatusPanel);
         Controls.Add(subtitle);
         Controls.Add(title);
     }
@@ -256,7 +264,8 @@ public sealed class SocialMediaManagerPage : UserControl
             : "Token already stored";
 
         UpdatePlatformState();
-            PopulatePlatforms();
+        PopulatePlatforms();
+        PopulatePlatformStatus();
         await RefreshQueueAsync();
         await RefreshFacebookStatusAsync();
     }
@@ -271,6 +280,117 @@ public sealed class SocialMediaManagerPage : UserControl
         _platformNote.Text = anyComingSoon ? "One or more selected platforms are coming soon and cannot publish." : string.Empty;
     }
 
+    private void PopulatePlatformStatus()
+    {
+        _platformStatusPanel.Controls.Clear();
+        if (_platformAdapters is null)
+        {
+            return;
+        }
+
+        foreach (var adapter in _platformAdapters.OrderBy(a => a.DisplayName))
+        {
+            var lbl = new Label
+            {
+                Text = adapter.DisplayName,
+                AutoSize = false,
+                Width = 180,
+                Height = 32,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Padding = new Padding(8, 0, 8, 0),
+                Margin = new Padding(0, 0, 8, 0),
+                Font = new Font("Segoe UI", 9F, FontStyle.Regular)
+            };
+
+            // Status badge
+            var badge = new Label
+            {
+                AutoSize = false,
+                Width = 110,
+                Height = 22,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Dock = DockStyle.Right,
+                Margin = new Padding(8, 5, 0, 5),
+                Font = new Font("Segoe UI", 8F, FontStyle.Bold)
+            };
+
+            if (!adapter.IsSupported)
+            {
+                badge.Text = "Coming Soon";
+                badge.BackColor = Color.FromArgb(245, 158, 11);
+                badge.ForeColor = Color.White;
+            }
+            else
+            {
+                // Default to Not Configured; call ValidateConnectionAsync asynchronously to update the badge
+                badge.Text = "Not configured";
+                badge.BackColor = Color.FromArgb(239, 68, 68);
+                badge.ForeColor = Color.White;
+
+                // Fire-and-forget validation to update badge
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        var result = await adapter.ValidateConnectionAsync();
+                        if (_platformStatusPanel.InvokeRequired) _platformStatusPanel.Invoke(new Action(() =>
+                        {
+                            if (result.Succeeded)
+                            {
+                                badge.Text = "Configured";
+                                badge.BackColor = Color.FromArgb(16, 185, 129);
+                            }
+                            else
+                            {
+                                badge.Text = result.Message ?? "Not configured";
+                                badge.BackColor = Color.FromArgb(239, 68, 68);
+                            }
+                                                }));
+                                                else
+                                                {
+                                                    if (result.Succeeded)
+                                                    {
+                                                        badge.Text = "Configured";
+                                                        badge.BackColor = Color.FromArgb(16, 185, 129);
+                                                    }
+                                                    else
+                                                    {
+                                                        badge.Text = result.Message ?? "Not configured";
+                                                        badge.BackColor = Color.FromArgb(239, 68, 68);
+                                                    }
+                                                }
+                    }
+                    catch
+                    {
+                        if (_platformStatusPanel.InvokeRequired) _platformStatusPanel.Invoke(new Action(() =>
+                        {
+                            badge.Text = "Error";
+                            badge.BackColor = Color.FromArgb(107, 114, 128);
+                                                }));
+                                                else
+                                                {
+                                                    badge.Text = "Error";
+                                                    badge.BackColor = Color.FromArgb(107, 114, 128);
+                                                }
+                    }
+                });
+            }
+
+            var card = new Panel
+            {
+                Width = 300,
+                Height = 36,
+                BackColor = Color.White,
+                Margin = new Padding(0, 0, 8, 0),
+                Padding = new Padding(8)
+            };
+            lbl.Dock = DockStyle.Left;
+            badge.Dock = DockStyle.Right;
+            card.Controls.Add(lbl);
+            card.Controls.Add(badge);
+            _platformStatusPanel.Controls.Add(card);
+        }
+    }
     private IReadOnlyList<SocialPlatform> GetSelectedPlatforms()
     {
         return _platformList.CheckedItems.Cast<object>()

@@ -61,6 +61,8 @@ internal static class AppComposition
         builder.Services.AddSingleton<WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter, WindowsWorkflowAutomator.SocialMedia.Adapters.TikTokPlatformAdapter>();
         // Register YouTube service
         builder.Services.AddSingleton<IYouTubeService, YouTubeService>();
+        // Register TikTok service
+        builder.Services.AddSingleton<ITikTokService, TikTokService>();
         builder.Services.AddSingleton<ApplicationStartup>();
         builder.Services.AddSingleton<ModuleNavigator>();
         builder.Services.AddTransient<DashboardPage>();

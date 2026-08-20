@@ -28,5 +28,8 @@ public sealed class AppSettings
 
     // YouTube settings (store access token protected)
     public string YouTubeAccessTokenProtected { get; set; } = string.Empty;
+
+    // TikTok settings (store access token protected)
+    public string TikTokAccessTokenProtected { get; set; } = string.Empty;
 }
 
