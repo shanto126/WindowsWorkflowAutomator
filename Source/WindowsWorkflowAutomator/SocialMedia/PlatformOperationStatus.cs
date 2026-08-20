@@ -4,6 +4,7 @@ public enum PlatformOperationStatus
 {
     Success,
     NotConfigured,
+    Limited,
     AuthFailure,
     NetworkFailure,
     RateLimited,

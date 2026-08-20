@@ -49,6 +49,8 @@ internal static class AppComposition
         builder.Services.AddSingleton<ISocialMediaService, SocialMediaService>();
         builder.Services.AddSingleton<IFacebookService, FacebookService>();
         builder.Services.AddSingleton<ILinkedInService, LinkedInComingSoonService>();
+        // Instagram service (uses Meta/Graph API). Registered as singleton to match other social services.
+        builder.Services.AddSingleton<IInstagramService, InstagramService>();
 
         // Social platform adapters
         builder.Services.AddSingleton<WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter, WindowsWorkflowAutomator.SocialMedia.Adapters.FacebookPlatformAdapter>();

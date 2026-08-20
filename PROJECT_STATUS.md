@@ -39,11 +39,12 @@ This file is the team handoff document. **Read it first** in every new Cursor/Cl
 - [x] Download Folder Monitor (`FileSystemWatcher`, waits for complete files)
 - [x] GitHub Automation (configure repo, status, local commit, manual push button with confirmation, activity logging)
 - [x] GitHub Smart Auto-Sync (new: file watcher, debounced auto-commit to local repo; does NOT auto-push)
-- [x] Multi-platform Social Media adapter architecture (ISocialPlatformAdapter + platform adapters). Facebook supported; LinkedIn / Instagram / X / YouTube / TikTok marked Coming Soon.
+- [x] Multi-platform Social Media adapter architecture (ISocialPlatformAdapter + platform adapters). Facebook and Instagram supported; LinkedIn / X / YouTube / TikTok marked Coming Soon.
 - [x] Social Media Manager UI: multiple platform selection (create drafts for multiple platforms), platform status shown (Supported / Coming Soon).
 - [x] Social Media Manager (queue UI, image-folder split, Draft/Pending/Scheduled/Processing/Published/Failed/Cancelled statuses)
 - [x] Social Media multi-platform adapter architecture (Adapters folder added; Facebook adapter remains the only fully supported platform; others marked Coming Soon)
 - [x] Facebook Integration wiring (official Graph API service, token-secured storage, explicit connect/validate/publish flow, not-configured state)
+- [x] Instagram Integration wiring (Instagram Graph API via Meta; single-image public-URL publish supported; local-file uploads limited)
 - [x] LinkedIn Coming Soon guard (`ILinkedInService` returns clear coming-soon result; queue/publish blocked)
 - [ ] Workflow Automation (feature code)
 - [ ] Task Scheduler
@@ -58,9 +59,9 @@ Do not implement Workflow, GitHub, Social Media, or Scheduler in a File Organize
 ## 4. Last Updated By / Date
 
 - **By:** Shanto
-- **Date:** 2026-08-19
-- **Branch:** `feature/phase5-github-automation`
-- **Last commit:** (pending this session) Social Media Manager + Facebook integration + LinkedIn coming-soon module
+- **Date:** 2026-08-20
+- **Branch:** `feature/shanto-smart-sync-multiplatform`
+- **Last commit:** (pending this session) Implemented Instagram adapter and InstagramService (real integration for public-image URLs)
 
 ## 5. Next Steps
 
@@ -89,8 +90,8 @@ Exact instruction for whoever continues:
 ## 7. Build Status
 
 - **Last confirmed:** 2026-08-19
-- **Result:** Clean build — **0 errors, 0 warnings**
-- **Tests:** 15 passed (includes `GitHubAutomationTests` and `SocialMediaPlannerTests`)
+- **Result:** Clean build — **0 errors, 1 warning**
+- **Tests:** 17 passed (includes `GitHubAutomationTests` and `SocialMediaPlannerTests`)
 - **Run:** `dotnet test WindowsWorkflowAutomator.sln`
 - **Command:** `dotnet build WindowsWorkflowAutomator.sln`
 
