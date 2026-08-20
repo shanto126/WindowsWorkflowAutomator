@@ -53,6 +53,7 @@ internal static class AppComposition
         builder.Services.AddSingleton<IYouTubeService, YouTubeService>();
         builder.Services.AddSingleton<ITikTokService, TikTokService>();
         builder.Services.AddSingleton<IRedditService, RedditService>();
+        builder.Services.AddSingleton<IThreadsService, ThreadsService>();
         builder.Services.AddSingleton<MultiPlatformPostOrchestrator>();
 
         // Social platform adapters
@@ -63,6 +64,7 @@ internal static class AppComposition
         builder.Services.AddSingleton<WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter, WindowsWorkflowAutomator.SocialMedia.Adapters.YouTubePlatformAdapter>();
         builder.Services.AddSingleton<WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter, WindowsWorkflowAutomator.SocialMedia.Adapters.TikTokPlatformAdapter>();
         builder.Services.AddSingleton<WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter, WindowsWorkflowAutomator.SocialMedia.Adapters.RedditPlatformAdapter>();
+        builder.Services.AddSingleton<WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter, WindowsWorkflowAutomator.SocialMedia.Adapters.ThreadsPlatformAdapter>();
         builder.Services.AddSingleton<WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter, WindowsWorkflowAutomator.SocialMedia.Adapters.SnapchatPlatformAdapter>();
         builder.Services.AddSingleton<ApplicationStartup>();
         builder.Services.AddSingleton<ModuleNavigator>();

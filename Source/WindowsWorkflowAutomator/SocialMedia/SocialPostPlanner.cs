@@ -4,7 +4,8 @@ public static class SocialPostPlanner
 {
     private static readonly HashSet<string> SupportedExtensions =
     [
-        ".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"
+        ".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp",
+        ".mp4", ".mov"
     ];
 
     public static IReadOnlyList<IReadOnlyList<string>> SplitImagePaths(
@@ -57,5 +58,16 @@ public static class SocialPostPlanner
             .Where(path => SupportedExtensions.Contains(Path.GetExtension(path).ToLowerInvariant()))
             .OrderBy(path => Path.GetFileName(path), StringComparer.OrdinalIgnoreCase)
             .ToArray();
+    }
+
+    public static bool IsVideoPath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return false;
+        }
+
+        var extension = Path.GetExtension(path).ToLowerInvariant();
+        return extension is ".mp4" or ".mov";
     }
 }

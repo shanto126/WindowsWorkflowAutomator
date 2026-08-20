@@ -100,10 +100,15 @@ public sealed class FacebookService : IFacebookService
             return validation;
         }
 
-        var mediaIds = new List<string>();
-        foreach (var image in images)
+        if (images == null || images.Count == 0)
         {
-            var upload = await UploadMediaAsync(image, cancellationToken);
+            return PlatformOperationResult.Fail(PlatformOperationStatus.Error, "Facebook requires at least one media item.");
+        }
+
+        var mediaIds = new List<string>();
+        foreach (var item in images)
+        {
+            var upload = await UploadMediaAsync(item, cancellationToken);
             if (!upload.Succeeded)
             {
                 return upload;
@@ -152,23 +157,35 @@ public sealed class FacebookService : IFacebookService
                 "Facebook integration is not configured.");
         }
 
-        if (string.IsNullOrWhiteSpace(imagePath) || !File.Exists(imagePath))
+        if (string.IsNullOrWhiteSpace(imagePath))
         {
-            return PlatformOperationResult.Fail(PlatformOperationStatus.Error, "Image file not found.");
+            return PlatformOperationResult.Fail(PlatformOperationStatus.Error, "Media path is empty.");
+        }
+
+        if (Uri.TryCreate(imagePath, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+        {
+            return PlatformOperationResult.Ok("Public media URL is ready for Facebook publishing.", externalId: imagePath);
+        }
+
+        if (!File.Exists(imagePath))
+        {
+            return PlatformOperationResult.Fail(PlatformOperationStatus.Error, "Media file not found.");
         }
 
         try
         {
-            using var request = new HttpRequestMessage(
-                HttpMethod.Post,
-                $"https://graph.facebook.com/v20.0/{Uri.EscapeDataString(config.PageId)}/photos");
+            var isVideo = IsVideoPath(imagePath);
+            var endpoint = isVideo
+                ? $"https://graph.facebook.com/v20.0/{Uri.EscapeDataString(config.PageId)}/videos"
+                : $"https://graph.facebook.com/v20.0/{Uri.EscapeDataString(config.PageId)}/photos";
 
+            using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
             using var multipart = new MultipartFormDataContent();
-            var imageBytes = await File.ReadAllBytesAsync(imagePath, cancellationToken);
-            var imageContent = new ByteArrayContent(imageBytes);
-            imageContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-            multipart.Add(imageContent, "source", Path.GetFileName(imagePath));
-            multipart.Add(new StringContent("false"), "published");
+            var bytes = await File.ReadAllBytesAsync(imagePath, cancellationToken);
+            var content = new ByteArrayContent(bytes);
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+            multipart.Add(content, "source", Path.GetFileName(imagePath));
+            multipart.Add(new StringContent(isVideo ? "true" : "false"), "published");
             multipart.Add(new StringContent(config.AccessToken), "access_token");
             request.Content = multipart;
 
@@ -180,7 +197,7 @@ public sealed class FacebookService : IFacebookService
 
             var raw = await response.Content.ReadAsStringAsync(cancellationToken);
             var id = TryReadJsonField(raw, "id");
-            return PlatformOperationResult.Ok("Media uploaded.", id);
+            return PlatformOperationResult.Ok(isVideo ? "Video uploaded." : "Media uploaded.", id);
         }
         catch (TaskCanceledException)
         {
@@ -263,6 +280,17 @@ public sealed class FacebookService : IFacebookService
         }
 
         return null;
+    }
+
+    private static bool IsVideoPath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return false;
+        }
+
+        var extension = Path.GetExtension(path).ToLowerInvariant();
+        return extension is ".mp4" or ".mov" or ".m4v" or ".avi" or ".webm";
     }
 
     private readonly record struct FacebookConfig(string AppId, string PageId, string AccessToken)

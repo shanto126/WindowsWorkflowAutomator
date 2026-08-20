@@ -39,5 +39,9 @@ public sealed class AppSettings
     public string RedditSubreddit { get; set; } = string.Empty;
     public string RedditUsername { get; set; } = string.Empty;
     public string RedditPasswordProtected { get; set; } = string.Empty;
+
+    // Threads settings (Meta's Threads API uses a dedicated OAuth token and user id, separate from Instagram)
+    public string ThreadsAccessTokenProtected { get; set; } = string.Empty;
+    public string ThreadsUserId { get; set; } = string.Empty;
 }
 

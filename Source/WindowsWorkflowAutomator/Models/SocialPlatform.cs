@@ -9,5 +9,6 @@ public enum SocialPlatform
     YouTube,
     TikTok,
     Reddit,
+    Threads,
     Snapchat
 }

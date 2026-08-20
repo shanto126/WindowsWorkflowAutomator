@@ -4,7 +4,7 @@ This file is the team handoff document. **Read it first** in every new Cursor/Cl
 
 ## 1. Current Phase
 
-**Phase 8 of 12 — LinkedIn (Coming Soon) — COMPLETED**
+**Phase 8 of 12 — Social Media Platform Expansion — COMPLETED**
 
 | Phase | Name | Status |
 | --- | --- | --- |
@@ -15,10 +15,10 @@ This file is the team handoff document. **Read it first** in every new Cursor/Cl
 | 5 | GitHub Automation | Done |
 | 6 | Social Media Manager | Done |
 | 7 | Facebook API | Done |
-| 8 | LinkedIn (Coming Soon) | Done |
+| 8 | Social Platform Expansion (Reddit / Threads / unified compose / video support) | Done |
 | 9 | Free/Premium + License | Not started |
-| 10 | Testing + Error Handling | Not started |
-| 11 | UI Polish | Not started |
+| 10 | Testing + Error Handling | Done |
+| 11 | UI Polish | Done |
 | 12 | Final EXE + Documentation + Demo | Not started |
 
 ## 2. Completed Modules
@@ -42,12 +42,13 @@ This file is the team handoff document. **Read it first** in every new Cursor/Cl
 - [x] Multi-platform Social Media adapter architecture (ISocialPlatformAdapter + platform adapters). Facebook and Instagram supported; LinkedIn / X Coming Soon; YouTube and TikTok in progress.
 - [x] Social Media Manager UI: multiple platform selection (create drafts for multiple platforms), platform status shown (Supported / Coming Soon).
 - [x] Social Media Manager (queue UI, image-folder split, Draft/Pending/Scheduled/Processing/Published/Failed/Cancelled statuses)
-- [x] Social Media multi-platform adapter architecture (Adapters folder added; Facebook adapter remains the only fully supported platform; others marked Coming Soon)
-- [x] Facebook Integration wiring (official Graph API service, token-secured storage, explicit connect/validate/publish flow, not-configured state)
-- [x] Instagram Integration wiring (Instagram Graph API via Meta; single-image public-URL publish supported; local-file uploads limited)
+- [x] Social Media multi-platform adapter architecture (Adapters folder added; Facebook/Instagram/YouTube/TikTok/Reddit/Threads are supported; LinkedIn/X/Snapchat remain Coming Soon)
+- [x] Facebook Integration wiring (official Graph API service, token-secured storage, explicit connect/validate/publish flow, not-configured state, image + video support)
+- [x] Instagram Integration wiring (Instagram Graph API via Meta; image and video/Reels support where public-URL requirements apply; local file uploads remain limited)
 - [x] YouTube Integration wiring (YouTube Data API; multipart upload path implemented; requires OAuth access token configured)
-- [x] TikTok Integration wiring (TikTok adapter + service; public-URL media publish path implemented, local uploads limited)
-- [x] Reddit Integration wiring (official OAuth bearer-token service, subreddit validation, title-required image/text posts, clear config failure states)
+- [x] TikTok Integration wiring (TikTok adapter + service; video-first public-URL media publish path implemented, local uploads limited)
+- [x] Reddit Integration wiring (official OAuth bearer-token service, subreddit validation, title-required image/text/video posts with explicit failure states)
+- [x] Threads Integration wiring (Meta Threads API; text and public URL image/video publishing; clear config and limitation states)
 - [x] Unified compose orchestration (single-screen multi-platform publish action with per-platform result summary and queue integration)
 - [x] LinkedIn Coming Soon guard (`ILinkedInService` returns clear coming-soon result; queue/publish blocked)
 - [x] Snapchat Coming Soon adapter (`SnapchatPlatformAdapter` blocks publishing with a clear coming-soon result)
@@ -94,9 +95,9 @@ Exact instruction for whoever continues:
 
 ## 7. Build Status
 
-- **Last confirmed:** 2026-08-19
-- **Result:** Clean build — **0 errors, 1 warning**
-- **Tests:** 17 passed (includes `GitHubAutomationTests` and `SocialMediaPlannerTests`)
+- **Last confirmed:** 2026-08-20
+- **Result:** Clean build — **0 errors, 3 warnings**
+- **Tests:** 23 passed (includes social platform adapter and orchestrator coverage)
 - **Run:** `dotnet test WindowsWorkflowAutomator.sln`
 - **Command:** `dotnet build WindowsWorkflowAutomator.sln`
 
