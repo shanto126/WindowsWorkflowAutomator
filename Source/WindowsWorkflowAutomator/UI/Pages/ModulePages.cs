@@ -44,7 +44,3 @@ public sealed class LinkedInPage() : PlaceholderPage(
 public sealed class ActivityLogsPage() : PlaceholderPage(
     "Activity Logs",
     "Application activity will be shown here after the logging UI is implemented.");
-
-public sealed class SettingsPage() : PlaceholderPage(
-    "Settings",
-    "Application preferences, theme, and license options will live here.");
