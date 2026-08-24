@@ -11,13 +11,6 @@ public sealed class AppDbContext : DbContext
     }
 
     public DbSet<ActivityLogEntry> ActivityLogs => Set<ActivityLogEntry>();
-<<<<<<< HEAD
-    public DbSet<FileOrganizationRule> FileOrganizationRules => Set<FileOrganizationRule>();
-    public DbSet<GitHubRepository> GitHubRepositories => Set<GitHubRepository>();
-    public DbSet<Workflow> Workflows => Set<Workflow>();
-    public DbSet<WorkflowAction> WorkflowActions => Set<WorkflowAction>();
-    public DbSet<ScheduledTask> ScheduledTasks => Set<ScheduledTask>();
-=======
 
     public DbSet<FileOrganizationRule> FileOrganizationRules =>
         Set<FileOrganizationRule>();
@@ -43,7 +36,7 @@ public sealed class AppDbContext : DbContext
     public DbSet<LicenseInfo> LicenseInfos =>
         Set<LicenseInfo>();
 
->>>>>>> origin/develop
+    public DbSet<ScheduledTask> ScheduledTasks => Set<ScheduledTask>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<ActivityLogEntry>(entity =>
@@ -128,7 +121,6 @@ public sealed class AppDbContext : DbContext
                 .HasForeignKey(x => x.WorkflowId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
-<<<<<<< HEAD
         modelBuilder.Entity<ScheduledTask>(entity =>
         {
             entity.HasKey(x => x.Id);
@@ -140,8 +132,6 @@ public sealed class AppDbContext : DbContext
                 .HasForeignKey(x => x.WorkflowId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
-=======
->>>>>>> origin/develop
 
         modelBuilder.Entity<WorkflowAction>(entity =>
         {

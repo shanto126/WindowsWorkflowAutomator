@@ -12,22 +12,15 @@ public sealed class ApplicationStartup
     private readonly AppPaths _paths;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IAppLogger _logger;
-    private readonly ISchedulerService _scheduler;
 
     public ApplicationStartup(
         AppPaths paths,
         IServiceScopeFactory scopeFactory,
-<<<<<<< HEAD
-        IAppLogger logger,
-        ISchedulerService scheduler)
-=======
         IAppLogger logger)
->>>>>>> origin/develop
     {
         _paths = paths;
         _scopeFactory = scopeFactory;
         _logger = logger;
-        _scheduler = scheduler;
     }
 
     public async Task InitializeAsync(
@@ -42,12 +35,11 @@ public sealed class ApplicationStartup
 
         db.EnsureSchema();
 
-<<<<<<< HEAD
-        _scheduler.Start();
-        _logger.Information("Application initialized.");
-=======
         var licenseService = scope.ServiceProvider
             .GetRequiredService<ILicenseService>();
+
+        var featureGate = scope.ServiceProvider
+            .GetRequiredService<WindowsWorkflowAutomator.Services.FeatureGate.IFeatureGateService>();
 
         var isValid = await licenseService.ValidateAsync(
             cancellationToken);
@@ -62,6 +54,17 @@ public sealed class ApplicationStartup
             _logger.Information(
                 "Application initialized with a Free license.");
         }
->>>>>>> origin/develop
+
+        // Start scheduler only if the feature is enabled for the current tier.
+        if (featureGate.IsEnabled(WindowsWorkflowAutomator.Services.FeatureGate.Feature.Scheduler))
+        {
+            var scheduler = scope.ServiceProvider.GetRequiredService<ISchedulerService>();
+            scheduler.Start();
+            _logger.Information("Scheduler started based on feature gate.");
+        }
+        else
+        {
+            _logger.Information("Scheduler not started: feature is not enabled for current tier.");
+        }
     }
 }

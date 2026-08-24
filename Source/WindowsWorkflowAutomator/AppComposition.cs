@@ -36,6 +36,7 @@ internal static class AppComposition
         builder.Services.AddSingleton<IAppSettingsService, AppSettingsService>();
         builder.Services.AddSingleton<ISecretProtector, WindowsSecretProtector>();
         builder.Services.AddSingleton<ILicenseService, LicenseService>();
+        builder.Services.AddSingleton<WindowsWorkflowAutomator.Services.FeatureGate.IFeatureGateService, WindowsWorkflowAutomator.Services.FeatureGate.FeatureGateService>();
         builder.Services.AddDbContext<AppDbContext>(options =>
             options.UseSqlite($"Data Source={paths.DatabaseFilePath}"));
         builder.Services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
