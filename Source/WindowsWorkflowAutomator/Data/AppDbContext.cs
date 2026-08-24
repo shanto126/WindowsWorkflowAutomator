@@ -11,39 +11,16 @@ public sealed class AppDbContext : DbContext
     }
 
     public DbSet<ActivityLogEntry> ActivityLogs => Set<ActivityLogEntry>();
-<<<<<<< HEAD
     public DbSet<FileOrganizationRule> FileOrganizationRules => Set<FileOrganizationRule>();
     public DbSet<GitHubRepository> GitHubRepositories => Set<GitHubRepository>();
     public DbSet<Workflow> Workflows => Set<Workflow>();
     public DbSet<WorkflowAction> WorkflowActions => Set<WorkflowAction>();
     public DbSet<ScheduledTask> ScheduledTasks => Set<ScheduledTask>();
-=======
+    public DbSet<SocialPost> SocialPosts => Set<SocialPost>();
+    public DbSet<PostImage> PostImages => Set<PostImage>();
+    public DbSet<SocialAccount> SocialAccounts => Set<SocialAccount>();
+    public DbSet<LicenseInfo> LicenseInfos => Set<LicenseInfo>();
 
-    public DbSet<FileOrganizationRule> FileOrganizationRules =>
-        Set<FileOrganizationRule>();
-
-    public DbSet<GitHubRepository> GitHubRepositories =>
-        Set<GitHubRepository>();
-
-    public DbSet<Workflow> Workflows =>
-        Set<Workflow>();
-
-    public DbSet<WorkflowAction> WorkflowActions =>
-        Set<WorkflowAction>();
-
-    public DbSet<SocialPost> SocialPosts =>
-        Set<SocialPost>();
-
-    public DbSet<PostImage> PostImages =>
-        Set<PostImage>();
-
-    public DbSet<SocialAccount> SocialAccounts =>
-        Set<SocialAccount>();
-
-    public DbSet<LicenseInfo> LicenseInfos =>
-        Set<LicenseInfo>();
-
->>>>>>> origin/develop
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<ActivityLogEntry>(entity =>
@@ -128,20 +105,22 @@ public sealed class AppDbContext : DbContext
                 .HasForeignKey(x => x.WorkflowId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
-<<<<<<< HEAD
+
         modelBuilder.Entity<ScheduledTask>(entity =>
         {
             entity.HasKey(x => x.Id);
-            entity.Property(x => x.ScheduleType).HasConversion<string>().HasMaxLength(32);
+            entity.Property(x => x.ScheduleType)
+                .HasConversion<string>()
+                .HasMaxLength(32);
             entity.Property(x => x.ScheduledAt).IsRequired();
-            entity.Property(x => x.WeeklyDay).HasConversion<string>().HasMaxLength(16);
+            entity.Property(x => x.WeeklyDay)
+                .HasConversion<string>()
+                .HasMaxLength(16);
             entity.HasOne(x => x.Workflow)
                 .WithMany()
                 .HasForeignKey(x => x.WorkflowId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
-=======
->>>>>>> origin/develop
 
         modelBuilder.Entity<WorkflowAction>(entity =>
         {
@@ -336,6 +315,7 @@ public sealed class AppDbContext : DbContext
                     ON DELETE CASCADE
             );
             """);
+
         Database.ExecuteSqlRaw(
             """
             CREATE TABLE IF NOT EXISTS ScheduledTasks (

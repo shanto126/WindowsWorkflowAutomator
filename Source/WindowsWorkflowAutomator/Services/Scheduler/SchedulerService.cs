@@ -12,7 +12,7 @@ public sealed class SchedulerService : ISchedulerService, IDisposable
     private readonly Services.Automation.IWorkflowService _workflows;
     private readonly IAppLogger _logger;
     private readonly object _gate = new();
-    private Timer? _timer;
+    private System.Threading.Timer? _timer;
     private bool _running;
 
     public SchedulerService(
@@ -163,7 +163,7 @@ public sealed class SchedulerService : ISchedulerService, IDisposable
         {
             if (_running) return;
             _running = true;
-            _timer = new Timer(
+            _timer = new System.Threading.Timer(
                 async _ => await TimerTickAsync(),
                 null,
                 TimeSpan.Zero,

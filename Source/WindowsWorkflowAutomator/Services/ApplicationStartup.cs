@@ -17,12 +17,8 @@ public sealed class ApplicationStartup
     public ApplicationStartup(
         AppPaths paths,
         IServiceScopeFactory scopeFactory,
-<<<<<<< HEAD
         IAppLogger logger,
         ISchedulerService scheduler)
-=======
-        IAppLogger logger)
->>>>>>> origin/develop
     {
         _paths = paths;
         _scopeFactory = scopeFactory;
@@ -42,10 +38,6 @@ public sealed class ApplicationStartup
 
         db.EnsureSchema();
 
-<<<<<<< HEAD
-        _scheduler.Start();
-        _logger.Information("Application initialized.");
-=======
         var licenseService = scope.ServiceProvider
             .GetRequiredService<ILicenseService>();
 
@@ -62,6 +54,8 @@ public sealed class ApplicationStartup
             _logger.Information(
                 "Application initialized with a Free license.");
         }
->>>>>>> origin/develop
+
+        _scheduler.Start();
+        _logger.Information("Application initialized.");
     }
 }
