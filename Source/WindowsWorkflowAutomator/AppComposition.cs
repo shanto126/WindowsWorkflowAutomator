@@ -6,6 +6,8 @@ using WindowsWorkflowAutomator.Automation;
 using WindowsWorkflowAutomator.Configuration;
 using WindowsWorkflowAutomator.Data;
 using WindowsWorkflowAutomator.FileOrganizer;
+using WindowsWorkflowAutomator.GitHub;
+using WindowsWorkflowAutomator.Licensing;
 using WindowsWorkflowAutomator.Logging;
 using WindowsWorkflowAutomator.Repositories;
 using WindowsWorkflowAutomator.Security;
@@ -16,7 +18,7 @@ using WindowsWorkflowAutomator.SocialMedia;
 using WindowsWorkflowAutomator.UI;
 using WindowsWorkflowAutomator.UI.Navigation;
 using WindowsWorkflowAutomator.UI.Pages;
-using WindowsWorkflowAutomator.GitHub;
+
 namespace WindowsWorkflowAutomator;
 internal static class AppComposition
 {
@@ -33,9 +35,18 @@ internal static class AppComposition
         builder.Services.AddSingleton<IAppLogger, FileAppLogger>();
         builder.Services.AddSingleton<IAppSettingsService, AppSettingsService>();
         builder.Services.AddSingleton<ISecretProtector, WindowsSecretProtector>();
+        builder.Services.AddSingleton<ILicenseService, LicenseService>();
         builder.Services.AddDbContext<AppDbContext>(options =>
             options.UseSqlite($"Data Source={paths.DatabaseFilePath}"));
         builder.Services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
+        builder.Services.AddScoped<ILicenseRepository, LicenseRepository>();
+        builder.Services.AddScoped<ISocialAccountRepository, SocialAccountRepository>();
+        builder.Services.AddScoped<ISocialPostRepository, SocialPostRepository>();
+        builder.Services.AddScoped<IPostImageRepository, PostImageRepository>();
+        builder.Services.AddScoped<IWorkflowRepository, WorkflowRepository>();
+        builder.Services.AddScoped<
+        IFileOrganizationRuleRepository,
+        FileOrganizationRuleRepository>();
         builder.Services.AddSingleton<IFileRuleService, FileRuleService>();
         builder.Services.AddSingleton<IFileOrganizerService, FileOrganizerService>();
         builder.Services.AddSingleton<IDownloadFolderMonitor, DownloadFolderMonitor>();
