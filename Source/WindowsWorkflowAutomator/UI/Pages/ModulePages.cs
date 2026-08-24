@@ -29,10 +29,6 @@ public sealed class DownloadMonitorPage : FileOrganizerPage
     }
 }
 
-public sealed class TaskSchedulerPage() : PlaceholderPage(
-    "Task Scheduler",
-    "Schedule workflows and maintenance jobs.");
-
 public sealed class FacebookPage() : PlaceholderPage(
     "Facebook",
     "Facebook integration is planned. This page is a placeholder only.");

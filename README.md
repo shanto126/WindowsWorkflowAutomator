@@ -22,6 +22,7 @@ Phase 3 — File Organizer:
 - Extension-based rules (move / copy / rename)
 - Download folder monitor (`FileSystemWatcher`)
 - File Organizer page: folder picker, rule list, monitoring toggle, activity log
+- Task Scheduler: schedule saved workflows once, daily, or weekly with background execution
 
 Other feature modules (workflow engine, GitHub, Facebook, license keys, and so on) are **not implemented yet**. LinkedIn is shown as **Coming Soon**.
 

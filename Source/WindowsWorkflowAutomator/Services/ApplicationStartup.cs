@@ -3,6 +3,7 @@ using WindowsWorkflowAutomator.Configuration;
 using WindowsWorkflowAutomator.Data;
 using WindowsWorkflowAutomator.Licensing;
 using WindowsWorkflowAutomator.Logging;
+using WindowsWorkflowAutomator.Services.Scheduler;
 
 namespace WindowsWorkflowAutomator.Services;
 
@@ -11,15 +12,22 @@ public sealed class ApplicationStartup
     private readonly AppPaths _paths;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IAppLogger _logger;
+    private readonly ISchedulerService _scheduler;
 
     public ApplicationStartup(
         AppPaths paths,
         IServiceScopeFactory scopeFactory,
+<<<<<<< HEAD
+        IAppLogger logger,
+        ISchedulerService scheduler)
+=======
         IAppLogger logger)
+>>>>>>> origin/develop
     {
         _paths = paths;
         _scopeFactory = scopeFactory;
         _logger = logger;
+        _scheduler = scheduler;
     }
 
     public async Task InitializeAsync(
@@ -34,6 +42,10 @@ public sealed class ApplicationStartup
 
         db.EnsureSchema();
 
+<<<<<<< HEAD
+        _scheduler.Start();
+        _logger.Information("Application initialized.");
+=======
         var licenseService = scope.ServiceProvider
             .GetRequiredService<ILicenseService>();
 
@@ -50,5 +62,6 @@ public sealed class ApplicationStartup
             _logger.Information(
                 "Application initialized with a Free license.");
         }
+>>>>>>> origin/develop
     }
 }
