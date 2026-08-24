@@ -12,6 +12,7 @@ public sealed class AppDbContext : DbContext
     public DbSet<GitHubRepository> GitHubRepositories => Set<GitHubRepository>();
     public DbSet<Workflow> Workflows => Set<Workflow>();
     public DbSet<WorkflowAction> WorkflowActions => Set<WorkflowAction>();
+    public DbSet<ScheduledTask> ScheduledTasks => Set<ScheduledTask>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<ActivityLogEntry>(entity =>
@@ -47,6 +48,18 @@ public sealed class AppDbContext : DbContext
                 .HasForeignKey(x => x.WorkflowId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+        modelBuilder.Entity<ScheduledTask>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.ScheduleType).HasConversion<string>().HasMaxLength(32);
+            entity.Property(x => x.ScheduledAt).IsRequired();
+            entity.Property(x => x.WeeklyDay).HasConversion<string>().HasMaxLength(16);
+            entity.HasOne(x => x.Workflow)
+                .WithMany()
+                .HasForeignKey(x => x.WorkflowId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         modelBuilder.Entity<WorkflowAction>(entity =>
         {
             entity.HasKey(x => x.Id);
@@ -111,6 +124,19 @@ public sealed class AppDbContext : DbContext
                 Target TEXT NOT NULL,
                 Arguments TEXT NULL,
                 SortOrder INTEGER NOT NULL,
+                FOREIGN KEY(WorkflowId) REFERENCES Workflows(Id) ON DELETE CASCADE
+            );
+            """);
+        Database.ExecuteSqlRaw(
+            """
+            CREATE TABLE IF NOT EXISTS ScheduledTasks (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                WorkflowId INTEGER NOT NULL,
+                ScheduleType TEXT NOT NULL,
+                ScheduledAt TEXT NOT NULL,
+                WeeklyDay TEXT NULL,
+                IsEnabled INTEGER NOT NULL,
+                LastRunAtUtc TEXT NULL,
                 FOREIGN KEY(WorkflowId) REFERENCES Workflows(Id) ON DELETE CASCADE
             );
             """);

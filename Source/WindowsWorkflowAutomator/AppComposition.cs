@@ -11,6 +11,7 @@ using WindowsWorkflowAutomator.Repositories;
 using WindowsWorkflowAutomator.Security;
 using WindowsWorkflowAutomator.Services;
 using WindowsWorkflowAutomator.Services.Automation;
+using WindowsWorkflowAutomator.Services.Scheduler;
 using WindowsWorkflowAutomator.SocialMedia;
 using WindowsWorkflowAutomator.UI;
 using WindowsWorkflowAutomator.UI.Navigation;
@@ -45,6 +46,7 @@ internal static class AppComposition
         builder.Services.AddSingleton<IWorkflowAction, OpenFolderAction>();
         builder.Services.AddSingleton<WorkflowActionFactory>();
         builder.Services.AddSingleton<IWorkflowService, WorkflowService>();
+        builder.Services.AddSingleton<ISchedulerService, SchedulerService>();
         builder.Services.AddSingleton<IGitHubService, GitHubService>();
         builder.Services.AddSingleton<ISocialMediaService, SocialMediaService>();
         builder.Services.AddSingleton<IFacebookService, FacebookService>();

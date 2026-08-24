@@ -11,7 +11,7 @@ This file is the team handoff document. **Read it first** in every new Cursor/Cl
 | 1 | Architecture + GUI shell | Done |
 | 2 | Workflow Automation | Done |
 | 3 | File Organizer | Done |
-| 4 | Scheduler | Not started |
+| 4 | Scheduler | Done |
 | 5 | GitHub Automation | Done |
 | 6 | Social Media Manager | Done |
 | 7 | Facebook API | Done |
@@ -53,7 +53,7 @@ This file is the team handoff document. **Read it first** in every new Cursor/Cl
 - [x] LinkedIn Coming Soon guard (`ILinkedInService` returns clear coming-soon result; queue/publish blocked)
 - [x] Snapchat Coming Soon adapter (`SnapchatPlatformAdapter` blocks publishing with a clear coming-soon result)
 - [ ] Workflow Automation (feature code)
-- [ ] Task Scheduler
+- [x] Task Scheduler
 - [ ] License key / Free vs Premium logic
 
 ## 3. In-Progress Module
