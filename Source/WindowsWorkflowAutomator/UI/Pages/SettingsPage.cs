@@ -17,6 +17,7 @@ public sealed class SettingsPage : UserControl
     private Button _validateButton = null!;
     private Button _deactivateButton = null!;
     private Button _generateButton = null!;
+    private CheckBox _autoActivateCheck = new();
 
     public SettingsPage(
         ILicenseService licenseService,
@@ -109,6 +110,13 @@ public sealed class SettingsPage : UserControl
         buttons.Controls.Add(_generateButton);
         buttons.Controls.Add(_validateButton);
         buttons.Controls.Add(_deactivateButton);
+
+        // Auto-activate checkbox for generated keys (developer/demo convenience)
+        _autoActivateCheck.AutoSize = true;
+        _autoActivateCheck.Text = "Auto-activate generated key";
+        _autoActivateCheck.Checked = false;
+        _autoActivateCheck.Margin = new Padding(8, 8, 0, 0);
+        buttons.Controls.Add(_autoActivateCheck);
 
         _tierLabel.Text = "Current tier: Free";
         _tierLabel.AutoSize = true;
@@ -267,12 +275,41 @@ public sealed class SettingsPage : UserControl
         }
     }
 
-    private void OnGenerate(object? sender, EventArgs e)
+    private async void OnGenerate(object? sender, EventArgs e)
     {
         try
         {
             var key = WindowsWorkflowAutomator.Licensing.LicenseKeyGenerator.Generate();
             _licenseKeyBox.Text = key;
+
+            if (_autoActivateCheck.Checked)
+            {
+                SetButtonsEnabled(false);
+                try
+                {
+                    var success = await _licenseService.ActivateAsync(key);
+                    if (success)
+                    {
+                        await RefreshLicenseStatusAsync();
+                        MessageBox.Show(
+                            FindForm(),
+                            "Generated and activated a local license key (development only).",
+                            "License",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
+                        return;
+                    }
+                    else
+                    {
+                        await RefreshLicenseStatusAsync();
+                        ShowWarning("Generated key could not be activated.");
+                    }
+                }
+                finally
+                {
+                    SetButtonsEnabled(true);
+                }
+            }
 
             MessageBox.Show(
                 FindForm(),

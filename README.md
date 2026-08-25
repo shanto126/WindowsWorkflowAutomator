@@ -93,7 +93,7 @@ When contributing:
 - AI captioning (CaptionMode.AiAssisted) is not yet implemented.
 - Some adapters (LinkedIn, Snapchat) are intentionally marked "Coming Soon" and will block publishing with an explanatory message.
 - Device-limited licensing fields are present but multi-device flows are not yet implemented.
-- Dashboard summary cards still need wiring to live DB counts.
+- Dashboard summary cards are now wired to live DB counts (workflows, scheduled tasks, queued social posts, license status).
 
 ## Demo checklist (quick)
 

@@ -49,7 +49,7 @@ This file is the team handoff document. Read this first in every new session and
 | 8 | Done (Reddit/Threads/YT/TikTok adapters present) |
 | 9 | In progress — License service + UI present, gating implemented for scheduler, GitHub auto-sync, and workflow limits; added unit tests. Remaining: polish license UX, add expiry/edge-case tests, add upgrade UX/links. |
 | 10 | Mostly done — tests exist and pass locally; add more coverage for licensing edge cases and scheduler concurrency if desired. |
-| 11 | In progress — Social page polished; other pages got targeted polish (Settings, Task Scheduler, GitHub). Recommend targeted polish pass for Dashboard, WorkflowAutomationPage, FileOrganizerPage. |
+| 11 | In progress — Social page polished; other pages got targeted polish (Settings, Task Scheduler, GitHub). Dashboard wiring added (summary cards and navigation); recommend a follow-up polish pass for layout and live data optimizations. |
 | 12 | Not started — final README polishing and a Release publish step remain.
 
 ## 4. Last Updated By / Date
