@@ -83,16 +83,11 @@ internal static class AppComposition
         builder.Services.AddSingleton<ModuleNavigator>();
         builder.Services.AddTransient<DashboardPage>();
         builder.Services.AddTransient<WorkflowAutomationPage>();
-        builder.Services.AddTransient<ApplicationLauncherPage>();
-        builder.Services.AddTransient<WebsiteLauncherPage>();
         builder.Services.AddTransient<FileOrganizerPage>();
         builder.Services.AddTransient<DownloadMonitorPage>();
         builder.Services.AddTransient<TaskSchedulerPage>();
         builder.Services.AddTransient<GitHubAutomationPage>();
         builder.Services.AddTransient<SocialMediaManagerPage>();
-        builder.Services.AddTransient<FacebookPage>();
-        builder.Services.AddTransient<LinkedInPage>();
-        builder.Services.AddTransient<ActivityLogsPage>();
         builder.Services.AddTransient<SettingsPage>();
         builder.Services.AddSingleton<MainForm>();
         return builder.Build();

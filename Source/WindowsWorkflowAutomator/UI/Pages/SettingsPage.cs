@@ -271,7 +271,7 @@ public sealed class SettingsPage : UserControl
     {
         try
         {
-            var key = GenerateLicenseKey();
+            var key = WindowsWorkflowAutomator.Licensing.LicenseKeyGenerator.Generate();
             _licenseKeyBox.Text = key;
 
             MessageBox.Show(

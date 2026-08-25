@@ -15,6 +15,7 @@ public sealed class DashboardPage : UserControl
     private readonly ISocialPostRepository _socialPosts;
     private readonly ILicenseService _licenseService;
     private readonly IAppLogger _logger;
+    private readonly WindowsWorkflowAutomator.UI.Navigation.ModuleNavigator _navigator;
 
     private readonly Label _workflowsCount = new();
     private readonly Label _schedulesCount = new();
@@ -26,13 +27,15 @@ public sealed class DashboardPage : UserControl
         ISchedulerService scheduler,
         ISocialPostRepository socialPosts,
         ILicenseService licenseService,
-        IAppLogger logger)
+        IAppLogger logger,
+        WindowsWorkflowAutomator.UI.Navigation.ModuleNavigator navigator)
     {
         _workflows = workflows;
         _scheduler = scheduler;
         _socialPosts = socialPosts;
         _licenseService = licenseService;
         _logger = logger;
+        _navigator = navigator;
 
         Dock = DockStyle.Fill;
         BackColor = Color.FromArgb(246, 248, 252);
@@ -69,10 +72,10 @@ public sealed class DashboardPage : UserControl
             grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
         }
 
-        grid.Controls.Add(CreateCard("Workflows", _workflowsCount, "Total saved workflows."), 0, 0);
-        grid.Controls.Add(CreateCard("Scheduled Tasks", _schedulesCount, "Tasks defined in the scheduler."), 1, 0);
-        grid.Controls.Add(CreateCard("Queued Social Posts", _queuedPostsCount, "Posts pending publication."), 2, 0);
-        grid.Controls.Add(CreateCard("License", _licenseStatus, "Current license tier and expiry."), 3, 0);
+        grid.Controls.Add(CreateCard("Workflows", _workflowsCount, "Total saved workflows.", typeof(WorkflowAutomationPage)), 0, 0);
+                grid.Controls.Add(CreateCard("Scheduled Tasks", _schedulesCount, "Tasks defined in the scheduler.", typeof(TaskSchedulerPage)), 1, 0);
+                grid.Controls.Add(CreateCard("Queued Social Posts", _queuedPostsCount, "Posts pending publication.", typeof(SocialMediaManagerPage)), 2, 0);
+                grid.Controls.Add(CreateCard("License", _licenseStatus, "Current license tier and expiry.", typeof(SettingsPage)), 3, 0);
 
         var refreshButton = new Button
         {
@@ -92,7 +95,7 @@ public sealed class DashboardPage : UserControl
         Controls.Add(title);
     }
 
-    private Panel CreateCard(string title, Label valueLabel, string subtitle)
+    private Panel CreateCard(string title, Label valueLabel, string subtitle, Type? targetPage = null)
     {
         var panel = new Panel
         {
@@ -101,7 +104,8 @@ public sealed class DashboardPage : UserControl
             Margin = new Padding(8),
             BackColor = Color.White,
             BorderStyle = BorderStyle.FixedSingle,
-            AutoSize = true
+            AutoSize = true,
+            Cursor = Cursors.Hand
         };
 
         var titleLabel = new Label
@@ -139,7 +143,62 @@ public sealed class DashboardPage : UserControl
         layout.Controls.Add(subtitleLabel);
 
         panel.Controls.Add(layout);
+
+        if (targetPage is not null)
+        {
+            panel.Click += (_, _) => TryNavigateTo(targetPage, title);
+            // Also forward clicks from contained controls
+            foreach (Control c in layout.Controls)
+            {
+                c.Click += (_, _) => TryNavigateTo(targetPage, title);
+            }
+        }
+
         return panel;
+    }
+
+    private void TryNavigateTo(Type pageType, string title)
+    {
+        try
+        {
+            var form = FindForm();
+            if (form is null)
+            {
+                return;
+            }
+
+            // find contentPanel by name in the form's controls
+            Panel? contentPanel = null;
+            foreach (Control c in form.Controls)
+            {
+                if (c is Panel p && p.Name == "contentPanel")
+                {
+                    contentPanel = p;
+                    break;
+                }
+
+                // search container controls
+                foreach (Control child in c.Controls)
+                {
+                    if (child is Panel cp && cp.Name == "contentPanel")
+                    {
+                        contentPanel = cp;
+                        break;
+                    }
+                }
+
+                if (contentPanel is not null) break;
+            }
+
+            if (contentPanel is not null)
+            {
+                _navigator.Show(contentPanel, pageType, title);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Error($"Failed to navigate from dashboard to {title}", ex);
+        }
     }
 
     private async void OnLoad(object? sender, EventArgs e)
