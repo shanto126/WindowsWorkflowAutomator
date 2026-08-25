@@ -2,6 +2,7 @@ using WindowsWorkflowAutomator.Logging;
 using WindowsWorkflowAutomator.Models;
 using WindowsWorkflowAutomator.Services.Automation;
 using WindowsWorkflowAutomator.Services.Scheduler;
+using WindowsWorkflowAutomator.Licensing;
 
 namespace WindowsWorkflowAutomator.UI.Pages;
 
@@ -10,17 +11,20 @@ public sealed class TaskSchedulerPage : UserControl
     private readonly ISchedulerService _scheduler;
     private readonly IWorkflowService _workflows;
     private readonly IAppLogger _logger;
+    private readonly ILicenseService _licenseService;
     private readonly DataGridView _grid = new();
     private List<ScheduledTask> _items = [];
 
     public TaskSchedulerPage(
         ISchedulerService scheduler,
         IWorkflowService workflows,
-        IAppLogger logger)
+        IAppLogger logger,
+        ILicenseService licenseService)
     {
         _scheduler = scheduler;
         _workflows = workflows;
         _logger = logger;
+        _licenseService = licenseService;
 
         Dock = DockStyle.Fill;
         BackColor = Color.FromArgb(246, 248, 252);
@@ -49,6 +53,19 @@ public sealed class TaskSchedulerPage : UserControl
             ForeColor = Color.FromArgb(75, 85, 99),
             Padding = new Padding(0, 4, 0, 12),
             Dock = DockStyle.Top
+        };
+
+        // License note: automatic scheduler runs are Premium-only. Show status to the user.
+        var licenseNote = new Label
+        {
+            AutoSize = true,
+            Font = new Font("Segoe UI", 9F),
+            Padding = new Padding(0, 2, 0, 8),
+            ForeColor = _licenseService.IsPremium ? Color.FromArgb(21, 128, 61) : Color.FromArgb(180, 83, 9),
+            Dock = DockStyle.Top,
+            Text = _licenseService.IsPremium
+                ? "Automatic scheduled runs are enabled (Premium)."
+                : "Automatic scheduled runs are disabled on Free tier — upgrade to Premium to enable automatic scheduled workflows."
         };
 
         var add = CreateButton("Add schedule", OnAdd);
@@ -114,6 +131,7 @@ public sealed class TaskSchedulerPage : UserControl
 
         Controls.Add(_grid);
         Controls.Add(buttons);
+        Controls.Add(licenseNote);
         Controls.Add(subtitle);
         Controls.Add(title);
     }

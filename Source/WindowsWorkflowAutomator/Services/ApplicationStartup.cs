@@ -48,14 +48,15 @@ public sealed class ApplicationStartup
         {
             _logger.Information(
                 "Application initialized with a valid Premium license.");
+            // Start automatic scheduled tasks only for Premium users
+            _scheduler.Start();
         }
         else
         {
             _logger.Information(
-                "Application initialized with a Free license.");
+                "Application initialized with a Free license. Scheduler (automatic tasks) will NOT be started. Upgrade to Premium to enable automatic scheduled runs.");
         }
 
-        _scheduler.Start();
         _logger.Information("Application initialized.");
     }
 }

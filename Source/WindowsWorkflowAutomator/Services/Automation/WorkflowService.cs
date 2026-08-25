@@ -5,6 +5,7 @@ using WindowsWorkflowAutomator.Data;
 using WindowsWorkflowAutomator.Logging;
 using WindowsWorkflowAutomator.Models;
 using WindowsWorkflowAutomator.Utilities;
+using WindowsWorkflowAutomator.Licensing;
 
 namespace WindowsWorkflowAutomator.Services.Automation;
 
@@ -13,15 +14,21 @@ public sealed class WorkflowService : IWorkflowService
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly WorkflowActionFactory _actionFactory;
     private readonly IAppLogger _logger;
+    private readonly ILicenseService _licenseService;
+
+    // Free tier limit for number of workflows a Free user may create
+    private const int FreeMaxWorkflows = 3;
 
     public WorkflowService(
         IServiceScopeFactory scopeFactory,
         WorkflowActionFactory actionFactory,
-        IAppLogger logger)
+        IAppLogger logger,
+        ILicenseService licenseService)
     {
         _scopeFactory = scopeFactory;
         _actionFactory = actionFactory;
         _logger = logger;
+        _licenseService = licenseService;
     }
 
     public async Task<IReadOnlyList<Workflow>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -50,6 +57,17 @@ public sealed class WorkflowService : IWorkflowService
         Normalize(workflow);
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        // Enforce Free tier workflow limit
+        if (!_licenseService.IsPremium)
+        {
+            var existingCount = await db.Workflows.CountAsync(cancellationToken);
+            if (existingCount >= FreeMaxWorkflows)
+            {
+                throw new InvalidOperationException($"Free tier allows up to {FreeMaxWorkflows} workflows. Upgrade to Premium to create more.");
+            }
+        }
+
         db.Workflows.Add(workflow);
         await db.SaveChangesAsync(cancellationToken);
         _logger.Information($"Workflow created: {workflow.Name}");

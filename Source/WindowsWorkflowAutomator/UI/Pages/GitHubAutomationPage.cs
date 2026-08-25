@@ -1,10 +1,12 @@
 using WindowsWorkflowAutomator.GitHub;
+using WindowsWorkflowAutomator.Licensing;
 
 namespace WindowsWorkflowAutomator.UI.Pages;
 
 public sealed class GitHubAutomationPage : UserControl
 {
     private readonly IGitHubService _gitHubService;
+    private readonly ILicenseService _licenseService;
 
     private readonly TextBox _localPathBox = new();
     private readonly TextBox _remoteUrlBox = new();
@@ -23,9 +25,10 @@ public sealed class GitHubAutomationPage : UserControl
 
     private bool _tokenEdited;
 
-    public GitHubAutomationPage(IGitHubService gitHubService)
+    public GitHubAutomationPage(IGitHubService gitHubService, ILicenseService licenseService)
     {
         _gitHubService = gitHubService;
+        _licenseService = licenseService;
 
         Dock = DockStyle.Fill;
         BackColor = Color.FromArgb(246, 248, 252);
@@ -237,6 +240,21 @@ public sealed class GitHubAutomationPage : UserControl
             "Smart Auto Sync" => GitHubSyncMode.SmartAutoSync,
             _ => GitHubSyncMode.Manual
         };
+
+        // Enforce Smart Auto Sync as a Premium feature at the UI level
+        if (syncMode == GitHubSyncMode.SmartAutoSync && !_licenseService.IsPremium)
+        {
+            MessageBox.Show(
+                FindForm(),
+                "Smart Auto Sync is a Premium feature. Upgrade to Premium to enable it.",
+                "Premium feature",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+
+            // Revert to manual to avoid enabling the auto-sync feature
+            syncMode = GitHubSyncMode.Manual;
+            _syncModeCombo.SelectedItem = "Manual";
+        }
 
         var inactivitySeconds = _inactivityCombo.SelectedIndex switch
         {

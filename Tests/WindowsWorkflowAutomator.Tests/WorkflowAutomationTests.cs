@@ -6,6 +6,7 @@ using WindowsWorkflowAutomator.Data;
 using WindowsWorkflowAutomator.Logging;
 using WindowsWorkflowAutomator.Models;
 using WindowsWorkflowAutomator.Services.Automation;
+using WindowsWorkflowAutomator.Licensing;
 
 namespace WindowsWorkflowAutomator.Tests;
 
@@ -73,7 +74,8 @@ public class WorkflowAutomationTests
             new OpenWebsiteAction(launcher, new FakeReachability()),
             new OpenFolderAction(launcher)
         ]);
-        var service = new WorkflowService(provider.GetRequiredService<IServiceScopeFactory>(), factory, new StubLogger());
+        var service = new WorkflowService(provider.GetRequiredService<IServiceScopeFactory>(), factory, new StubLogger(), new StubLicenseService());
+
 
         var folder = Directory.CreateTempSubdirectory("wwa-wf-folder-");
         var exe = Path.Combine(folder.FullName, "fake.exe");
@@ -137,5 +139,14 @@ public class WorkflowAutomationTests
         public void Warning(string message)
         {
         }
+    }
+
+    private sealed class StubLicenseService : ILicenseService
+    {
+        public bool IsPremium => false;
+        public string CurrentTier => "Free";
+        public Task<bool> ActivateAsync(string licenseKey, CancellationToken cancellationToken = default) => Task.FromResult(false);
+        public Task<bool> ValidateAsync(CancellationToken cancellationToken = default) => Task.FromResult(false);
+        public Task DeactivateAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 }
