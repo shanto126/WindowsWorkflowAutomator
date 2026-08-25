@@ -30,6 +30,7 @@ public partial class MainForm : Form
         new() { Title = "Task Scheduler", PageType = typeof(TaskSchedulerPage) },
         new() { Title = "GitHub Automation", PageType = typeof(GitHubAutomationPage) },
         new() { Title = "Social Media Manager", PageType = typeof(SocialMediaManagerPage) },
+        new() { Title = "Activity Logs", PageType = typeof(ActivityLogsPage) },
         new() { Title = "Settings", PageType = typeof(SettingsPage) }
     ];
 

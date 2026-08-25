@@ -23,16 +23,18 @@ This file is the team handoff document. Read this first in every new session and
 
 ## 2. Real completion summary (from source code inspection)
 
+- Activity Logs: sidebar navigation includes "Activity Logs" and the page loads recent database events into a DataGridView with a Refresh action.
 - License system (serverless/local): core service and repository exist (LicenseService, LicenseRepository, LicenseInfo model).
-- License UI: Settings page has license key entry, Activate/Validate/Deactivate buttons and status display.
+- License UI: Settings page has license key entry, Activate/Validate/Deactivate buttons, a Get Premium section, and status display.
 - License persistence: EF Core + AppDbContext registers LicenseInfos table and migrations handled via EnsureSchema().
-- License validation: implemented locally (ActivateAsync/ValidateAsync/DeactivateAsync).
+- License validation: implemented locally (ActivateAsync/ValidateAsync/DeactivateAsync) with HMAC-SHA256 validation and a decoder/parser for WFA-PRO keys.
+- License generation: `LicenseKeyGenerator` now emits deterministic signed keys in the format `WFA-PRO-XXXX-XXXX-XXXX` and a console utility exists in `Tools/LicenseKeyGenerator` that prints the same output using the shared algorithm.
 - Feature gating (implemented in this session):
   - Scheduler automatic runs now only start when a valid Premium license is present (ApplicationStartup).
   - GitHub "Smart Auto Sync" is blocked for Free users at the UI level (GitHubAutomationPage warns and reverts to Manual).
   - Workflow creation is limited on Free tier (3 workflows cap enforced in WorkflowService) — Premium lifts this.
-- Tests: New unit tests added for license repository and service; existing tests updated to account for new constructor dependency. All tests currently pass locally.
-- Social Media: Multi-platform compose and drafts are implemented; AI caption mode is not yet implemented (throws "coming soon").
+- Tests: New unit tests added for license repository and service; license key generator validation and tamper detection tests added. All tests currently pass locally.
+- Social Media: Multi-platform compose and drafts are implemented; all supported/coming-soon platforms are surfaced in the UI and kept visible with fallback display names when adapters are missing.
 - Scheduler: SchedulerService implements timer-based automatic runs; creation/edit/delete and manual "Run now" flows exist in UI.
 
 ## 3. Updated phase table (accurate)
@@ -47,9 +49,9 @@ This file is the team handoff document. Read this first in every new session and
 | 6 | Done (Social Media Manager UI + adapters) |
 | 7 | Done (Facebook integration wired) |
 | 8 | Done (Reddit/Threads/YT/TikTok adapters present) |
-| 9 | In progress — License service + UI present, gating implemented for scheduler, GitHub auto-sync, and workflow limits; added unit tests. Remaining: polish license UX, add expiry/edge-case tests, add upgrade UX/links. |
-| 10 | Mostly done — tests exist and pass locally; add more coverage for licensing edge cases and scheduler concurrency if desired. |
-| 11 | In progress — Social page polished; other pages got targeted polish (Settings, Task Scheduler, GitHub). Dashboard wiring added (summary cards and navigation); recommend a follow-up polish pass for layout and live data optimizations. |
+| 9 | In progress — License service + UI present, HMAC-based key validation fixed, premium CTA section added, Activity Logs restored, and gating remains in place for scheduler, GitHub auto-sync, and workflow limits; added unit tests. Remaining: final polish and packaging. |
+| 10 | Mostly done — tests exist and pass locally; added license key signing/tamper checks and extra validation coverage. |
+| 11 | In progress — Social page polished; all expected platform entries are visible with explicit coming-soon placeholders, and other pages got targeted polish (Settings, Task Scheduler, GitHub). Dashboard wiring added (summary cards and navigation); recommend a follow-up polish pass for layout and live data optimizations. |
 | 12 | Not started — final README polishing and a Release publish step remain.
 
 ## 4. Last Updated By / Date

@@ -88,6 +88,7 @@ internal static class AppComposition
         builder.Services.AddTransient<TaskSchedulerPage>();
         builder.Services.AddTransient<GitHubAutomationPage>();
         builder.Services.AddTransient<SocialMediaManagerPage>();
+        builder.Services.AddTransient<ActivityLogsPage>();
         builder.Services.AddTransient<SettingsPage>();
         builder.Services.AddSingleton<MainForm>();
         return builder.Build();

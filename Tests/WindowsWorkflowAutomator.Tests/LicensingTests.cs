@@ -48,7 +48,7 @@ public class LicensingTests
 
             var license = new LicenseInfo
             {
-                LicenseKey = "WFA-PRO-ABCD-1234",
+                LicenseKey = LicenseKeyGenerator.Generate("PRO", DateTimeOffset.UtcNow.AddYears(1)),
                 Tier = "Premium",
                 IsActive = true,
                 ActivatedAtUtc = DateTimeOffset.UtcNow,
@@ -60,7 +60,7 @@ public class LicensingTests
             await repo.SaveAsync(license);
             var saved = await repo.GetAsync();
             Assert.NotNull(saved);
-            Assert.Equal("WFA-PRO-ABCD-1234", saved!.LicenseKey);
+            Assert.Equal(license.LicenseKey, saved!.LicenseKey);
 
             await repo.DeleteAsync();
             var afterDelete = await repo.GetAsync();
@@ -94,7 +94,8 @@ public class LicensingTests
 
             var svc = new LicenseService(scopeFactory);
 
-            var activated = await svc.ActivateAsync("WFA-PRO-ABCD-1234");
+            var licenseKey = LicenseKeyGenerator.Generate("PRO", DateTimeOffset.UtcNow.AddYears(1));
+            var activated = await svc.ActivateAsync(licenseKey);
             Assert.True(activated);
 
             var valid = await svc.ValidateAsync();

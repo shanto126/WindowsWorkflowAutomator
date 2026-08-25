@@ -144,6 +144,52 @@ public sealed class SettingsPage : UserControl
         licensePanel.Controls.Add(licenseFields);
         licensePanel.Controls.Add(licenseTitle);
 
+        var premiumTitle = new Label
+        {
+            Text = "Get Premium",
+            AutoSize = true,
+            Font = new Font("Segoe UI Semibold", 12F),
+            ForeColor = Color.FromArgb(17, 24, 39),
+            Dock = DockStyle.Top,
+            Padding = new Padding(0, 20, 0, 8)
+        };
+
+        var premiumPanel = new Panel
+        {
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            Padding = new Padding(0, 0, 0, 12)
+        };
+
+        var premiumFeatures = new ListBox
+        {
+            Dock = DockStyle.Top,
+            Height = 120,
+            BorderStyle = BorderStyle.None,
+            BackColor = Color.FromArgb(255, 255, 255),
+            Enabled = false,
+            Font = new Font("Segoe UI", 10F)
+        };
+
+        premiumFeatures.Items.Add("• Unlimited workflows and premium automation actions");
+        premiumFeatures.Items.Add("• Scheduler auto-runs without Free-tier restrictions");
+        premiumFeatures.Items.Add("• Smart GitHub Auto Sync and premium workflow gating");
+        premiumFeatures.Items.Add("• Priority support and extended social scheduling features");
+
+        var premiumContact = new Label
+        {
+            Text = "Contact: premium@windowsworkflowautomator.app",
+            AutoSize = true,
+            Font = new Font("Segoe UI", 10F),
+            ForeColor = Color.FromArgb(30, 64, 175),
+            Dock = DockStyle.Top,
+            Padding = new Padding(0, 8, 0, 0)
+        };
+
+        premiumPanel.Controls.Add(premiumContact);
+        premiumPanel.Controls.Add(premiumFeatures);
+        premiumPanel.Controls.Add(premiumTitle);
+
         var body = new Panel
         {
             Dock = DockStyle.Fill,
@@ -151,6 +197,7 @@ public sealed class SettingsPage : UserControl
         };
 
         body.Controls.Add(licensePanel);
+        body.Controls.Add(premiumPanel);
 
         Controls.Add(body);
         Controls.Add(subtitle);
@@ -279,7 +326,9 @@ public sealed class SettingsPage : UserControl
     {
         try
         {
-            var key = WindowsWorkflowAutomator.Licensing.LicenseKeyGenerator.Generate();
+            var key = WindowsWorkflowAutomator.Licensing.LicenseKeyGenerator.Generate(
+                "PRO",
+                DateTime.UtcNow.AddYears(1));
             _licenseKeyBox.Text = key;
 
             if (_autoActivateCheck.Checked)
@@ -323,12 +372,6 @@ public sealed class SettingsPage : UserControl
             _logger.Error("License key generation failed.", ex);
             ShowWarning("Could not generate license key.");
         }
-    }
-
-    private static string GenerateLicenseKey()
-    {
-        var g = Guid.NewGuid().ToString("N").ToUpperInvariant();
-        return string.Join("-", Enumerable.Range(0, 4).Select(i => g.Substring(i * 4, 4)));
     }
 
     private async Task RefreshLicenseStatusAsync()

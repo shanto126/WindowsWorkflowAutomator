@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using WindowsWorkflowAutomator.Models;
 using WindowsWorkflowAutomator.Repositories;
 
@@ -19,10 +19,14 @@ public sealed class LicenseService : ILicenseService
         _licenseInfo is not null &&
         _licenseInfo.IsActive &&
         _licenseInfo.Tier.Equals(
-            "Premium",
-            StringComparison.OrdinalIgnoreCase) &&
-        (!_licenseInfo.ExpiresAtUtc.HasValue ||
-         _licenseInfo.ExpiresAtUtc.Value > DateTimeOffset.UtcNow);
+           "Premium",
+           StringComparison.OrdinalIgnoreCase) &&
+        _licenseInfo.ExpiresAtUtc.HasValue &&
+        _licenseInfo.ExpiresAtUtc.Value > DateTimeOffset.UtcNow &&
+        LicenseKeyGenerator.TryParse(
+           _licenseInfo.LicenseKey,
+           out var payload) &&
+        payload.ExpiresAtUtc == _licenseInfo.ExpiresAtUtc.Value;
 
     public string CurrentTier =>
         IsPremium ? "Premium" : "Free";
@@ -33,35 +37,39 @@ public sealed class LicenseService : ILicenseService
     {
         if (string.IsNullOrWhiteSpace(licenseKey))
         {
-            return false;
+           return false;
         }
 
-        licenseKey = licenseKey.Trim();
-
-        if (!IsValidLicenseKeyFormat(licenseKey))
+        var trimmedKey = licenseKey.Trim();
+        if (!LicenseKeyGenerator.TryParse(trimmedKey, out var payload))
         {
-            return false;
+           return false;
+        }
+
+        if (payload.ExpiresAtUtc <= DateTimeOffset.UtcNow)
+        {
+           return false;
         }
 
         var license = new LicenseInfo
         {
-            LicenseKey = licenseKey,
-            Tier = "Premium",
-            IsActive = true,
-            ActivatedAtUtc = DateTimeOffset.UtcNow,
-            ExpiresAtUtc = DateTimeOffset.UtcNow.AddYears(1),
-            DeviceCount = 1,
-            DeviceLimit = 1
+           LicenseKey = trimmedKey,
+           Tier = "Premium",
+           IsActive = true,
+           ActivatedAtUtc = DateTimeOffset.UtcNow,
+           ExpiresAtUtc = payload.ExpiresAtUtc,
+           DeviceCount = 1,
+           DeviceLimit = 1
         };
 
         using var scope = _scopeFactory.CreateScope();
 
         var repository =
-            scope.ServiceProvider.GetRequiredService<ILicenseRepository>();
+           scope.ServiceProvider.GetRequiredService<ILicenseRepository>();
 
         await repository.SaveAsync(
-            license,
-            cancellationToken);
+           license,
+           cancellationToken);
 
         _licenseInfo = license;
 
@@ -74,14 +82,31 @@ public sealed class LicenseService : ILicenseService
         using var scope = _scopeFactory.CreateScope();
 
         var repository =
-            scope.ServiceProvider.GetRequiredService<ILicenseRepository>();
+           scope.ServiceProvider.GetRequiredService<ILicenseRepository>();
 
         var license = await repository.GetAsync(
-            cancellationToken);
+           cancellationToken);
 
         _licenseInfo = license;
 
-        return IsPremium;
+        if (license is null ||
+           !license.IsActive ||
+           !license.Tier.Equals("Premium", StringComparison.OrdinalIgnoreCase) ||
+           !license.ExpiresAtUtc.HasValue ||
+           license.ExpiresAtUtc.Value <= DateTimeOffset.UtcNow ||
+           !LicenseKeyGenerator.TryParse(license.LicenseKey, out var payload) ||
+           payload.ExpiresAtUtc != license.ExpiresAtUtc.Value)
+        {
+           if (license is not null && license.ExpiresAtUtc.HasValue && license.ExpiresAtUtc.Value <= DateTimeOffset.UtcNow)
+           {
+               await repository.DeleteAsync(cancellationToken);
+               _licenseInfo = null;
+           }
+
+           return false;
+        }
+
+        return true;
     }
 
     public async Task DeactivateAsync(
@@ -90,37 +115,11 @@ public sealed class LicenseService : ILicenseService
         using var scope = _scopeFactory.CreateScope();
 
         var repository =
-            scope.ServiceProvider.GetRequiredService<ILicenseRepository>();
+           scope.ServiceProvider.GetRequiredService<ILicenseRepository>();
 
         await repository.DeleteAsync(
-            cancellationToken);
+           cancellationToken);
 
         _licenseInfo = null;
-    }
-
-    private static bool IsValidLicenseKeyFormat(
-        string licenseKey)
-    {
-        if (licenseKey.Length != 17)
-        {
-            return false;
-        }
-
-        if (!licenseKey.StartsWith(
-                "WFA-PRO-",
-                StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
-
-        var parts = licenseKey.Split('-');
-
-        if (parts.Length != 4)
-        {
-            return false;
-        }
-
-        return parts[2].Length == 4 &&
-               parts[3].Length == 4;
     }
 }

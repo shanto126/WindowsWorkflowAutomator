@@ -11,6 +11,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{0AB3BF05
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsWorkflowAutomator.Tests", "Tests\WindowsWorkflowAutomator.Tests\WindowsWorkflowAutomator.Tests.csproj", "{423CA702-31C6-469A-BD37-4D61902CCBB1}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{5CB8C8C0-4C2A-4132-8909-D74AAB9673EE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LicenseKeyGenerator", "Tools\LicenseKeyGenerator\LicenseKeyGenerator.csproj", "{BDAA0E45-CD84-4A22-9AD2-9DE2AFDAAB29}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +49,18 @@ Global
 		{423CA702-31C6-469A-BD37-4D61902CCBB1}.Release|x64.Build.0 = Release|Any CPU
 		{423CA702-31C6-469A-BD37-4D61902CCBB1}.Release|x86.ActiveCfg = Release|Any CPU
 		{423CA702-31C6-469A-BD37-4D61902CCBB1}.Release|x86.Build.0 = Release|Any CPU
+		{BDAA0E45-CD84-4A22-9AD2-9DE2AFDAAB29}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BDAA0E45-CD84-4A22-9AD2-9DE2AFDAAB29}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BDAA0E45-CD84-4A22-9AD2-9DE2AFDAAB29}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{BDAA0E45-CD84-4A22-9AD2-9DE2AFDAAB29}.Debug|x64.Build.0 = Debug|Any CPU
+		{BDAA0E45-CD84-4A22-9AD2-9DE2AFDAAB29}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BDAA0E45-CD84-4A22-9AD2-9DE2AFDAAB29}.Debug|x86.Build.0 = Debug|Any CPU
+		{BDAA0E45-CD84-4A22-9AD2-9DE2AFDAAB29}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BDAA0E45-CD84-4A22-9AD2-9DE2AFDAAB29}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BDAA0E45-CD84-4A22-9AD2-9DE2AFDAAB29}.Release|x64.ActiveCfg = Release|Any CPU
+		{BDAA0E45-CD84-4A22-9AD2-9DE2AFDAAB29}.Release|x64.Build.0 = Release|Any CPU
+		{BDAA0E45-CD84-4A22-9AD2-9DE2AFDAAB29}.Release|x86.ActiveCfg = Release|Any CPU
+		{BDAA0E45-CD84-4A22-9AD2-9DE2AFDAAB29}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -52,5 +68,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{AC2313D7-8EA3-4BE8-BD92-9E3036D78739} = {B8EFCA5F-814F-285C-A8CB-F00F14650265}
 		{423CA702-31C6-469A-BD37-4D61902CCBB1} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{BDAA0E45-CD84-4A22-9AD2-9DE2AFDAAB29} = {5CB8C8C0-4C2A-4132-8909-D74AAB9673EE}
 	EndGlobalSection
 EndGlobal

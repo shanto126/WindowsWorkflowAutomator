@@ -2,6 +2,7 @@ using WindowsWorkflowAutomator.Configuration;
 using WindowsWorkflowAutomator.Logging;
 using WindowsWorkflowAutomator.Models;
 using WindowsWorkflowAutomator.SocialMedia;
+using WindowsWorkflowAutomator.SocialMedia.Adapters;
 
 namespace WindowsWorkflowAutomator.UI.Pages;
 
@@ -447,19 +448,35 @@ public sealed class SocialMediaManagerPage : UserControl
     private void PopulatePlatforms()
     {
         _platformList.Items.Clear();
-        if (_platformAdapters is null)
-        {
-            // Fallback to Facebook only
-            _platformList.Items.Add(new PlatformItem(SocialPlatform.Facebook, "Facebook", true));
-            return;
-        }
 
-        foreach (var adapter in _platformAdapters.OrderBy(a => a.DisplayName))
+        var visiblePlatforms = _platformAdapters?
+            .ToDictionary(adapter => adapter.Platform, adapter => adapter)
+            ?? new Dictionary<SocialPlatform, WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter>();
+
+        foreach (var platform in Enum.GetValues<SocialPlatform>())
         {
+            var adapter = visiblePlatforms.TryGetValue(platform, out var existing)
+                ? existing
+                : new ComingSoonPlatformAdapter(platform, GetFallbackPlatformLabel(platform));
+
             var item = new PlatformItem(adapter.Platform, adapter.DisplayName, adapter.IsSupported);
-            _platformList.Items.Add(item, adapter.Platform == SocialPlatform.Facebook);
+            _platformList.Items.Add(item, platform == SocialPlatform.Facebook);
         }
     }
+
+    private static string GetFallbackPlatformLabel(SocialPlatform platform) => platform switch
+    {
+        SocialPlatform.Facebook => "Facebook",
+        SocialPlatform.LinkedIn => "LinkedIn (Coming Soon)",
+        SocialPlatform.Instagram => "Instagram",
+        SocialPlatform.X => "X / Twitter (Coming Soon)",
+        SocialPlatform.YouTube => "YouTube",
+        SocialPlatform.TikTok => "TikTok",
+        SocialPlatform.Reddit => "Reddit",
+        SocialPlatform.Threads => "Threads",
+        SocialPlatform.Snapchat => "Snapchat (Coming Soon)",
+        _ => platform.ToString()
+    };
 
     private CaptionMode GetCaptionMode() =>
         _captionModeBox.SelectedItem is CaptionMode mode ? mode : CaptionMode.Manual;
