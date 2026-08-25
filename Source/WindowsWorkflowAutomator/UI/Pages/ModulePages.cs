@@ -4,9 +4,6 @@ using WindowsWorkflowAutomator.Logging;
 
 namespace WindowsWorkflowAutomator.UI.Pages;
 
-public sealed class DashboardPage() : PlaceholderPage(
-    "Dashboard",
-    "High-level overview of workflows, recent activity, and system status.");
 
 public sealed class ApplicationLauncherPage() : PlaceholderPage(
     "Application Launcher",

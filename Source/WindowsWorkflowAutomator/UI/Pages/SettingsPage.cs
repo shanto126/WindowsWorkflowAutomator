@@ -1,4 +1,5 @@
-﻿using WindowsWorkflowAutomator.Licensing;
+using System.Linq;
+using WindowsWorkflowAutomator.Licensing;
 using WindowsWorkflowAutomator.Logging;
 
 namespace WindowsWorkflowAutomator.UI.Pages;
@@ -15,6 +16,7 @@ public sealed class SettingsPage : UserControl
     private Button _activateButton = null!;
     private Button _validateButton = null!;
     private Button _deactivateButton = null!;
+    private Button _generateButton = null!;
 
     public SettingsPage(
         ILicenseService licenseService,
@@ -69,6 +71,7 @@ public sealed class SettingsPage : UserControl
         _licenseKeyBox.MaxLength = 64;
 
         _activateButton = CreateButton("Activate", OnActivate);
+        _generateButton = CreateButton("Generate", OnGenerate);
         _validateButton = CreateButton("Validate", OnValidate);
         _deactivateButton = CreateButton("Deactivate", OnDeactivate);
 
@@ -103,6 +106,7 @@ public sealed class SettingsPage : UserControl
             WrapContents = false
         };
 
+        buttons.Controls.Add(_generateButton);
         buttons.Controls.Add(_validateButton);
         buttons.Controls.Add(_deactivateButton);
 
@@ -261,6 +265,33 @@ public sealed class SettingsPage : UserControl
         {
             SetButtonsEnabled(true);
         }
+    }
+
+    private void OnGenerate(object? sender, EventArgs e)
+    {
+        try
+        {
+            var key = GenerateLicenseKey();
+            _licenseKeyBox.Text = key;
+
+            MessageBox.Show(
+                FindForm(),
+                "Generated a local license key. Use this to activate on this machine (development only).",
+                "License",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error("License key generation failed.", ex);
+            ShowWarning("Could not generate license key.");
+        }
+    }
+
+    private static string GenerateLicenseKey()
+    {
+        var g = Guid.NewGuid().ToString("N").ToUpperInvariant();
+        return string.Join("-", Enumerable.Range(0, 4).Select(i => g.Substring(i * 4, 4)));
     }
 
     private async Task RefreshLicenseStatusAsync()

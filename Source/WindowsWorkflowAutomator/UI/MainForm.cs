@@ -25,16 +25,11 @@ public partial class MainForm : Form
     [
         new() { Title = "Dashboard", PageType = typeof(DashboardPage) },
         new() { Title = "Workflow Automation", PageType = typeof(WorkflowAutomationPage) },
-        new() { Title = "Application Launcher", PageType = typeof(ApplicationLauncherPage) },
-        new() { Title = "Website Launcher", PageType = typeof(WebsiteLauncherPage) },
         new() { Title = "File Organizer", PageType = typeof(FileOrganizerPage) },
         new() { Title = "Download Monitor", PageType = typeof(DownloadMonitorPage) },
         new() { Title = "Task Scheduler", PageType = typeof(TaskSchedulerPage) },
         new() { Title = "GitHub Automation", PageType = typeof(GitHubAutomationPage) },
         new() { Title = "Social Media Manager", PageType = typeof(SocialMediaManagerPage) },
-        new() { Title = "Facebook", PageType = typeof(FacebookPage) },
-        new() { Title = "LinkedIn", PageType = typeof(LinkedInPage), ComingSoon = true },
-        new() { Title = "Activity Logs", PageType = typeof(ActivityLogsPage) },
         new() { Title = "Settings", PageType = typeof(SettingsPage) }
     ];
 
