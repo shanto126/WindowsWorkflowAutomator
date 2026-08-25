@@ -67,6 +67,8 @@ public sealed class GitHubAutomationPage : UserControl
         {
             Dock = DockStyle.Top,
             AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            GrowStyle = TableLayoutPanelGrowStyle.AddRows,
             ColumnCount = 3,
             Padding = new Padding(0, 0, 0, 8)
         };
@@ -101,7 +103,19 @@ public sealed class GitHubAutomationPage : UserControl
         };
 
         _commitMessageBox.PlaceholderText = "Optional commit message (uses template if empty)";
-        _commitMessageBox.Dock = DockStyle.Top;
+        var commitMessagePanel = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            GrowStyle = TableLayoutPanelGrowStyle.AddRows,
+            ColumnCount = 3,
+            Padding = new Padding(0, 0, 0, 8)
+        };
+        commitMessagePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 210));
+        commitMessagePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        commitMessagePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 130));
+        AddFieldRow(commitMessagePanel, 0, "Commit message", _commitMessageBox);
 
         var actions = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 40, WrapContents = false };
         actions.Controls.Add(CreateButton("Save configuration", OnSaveConfiguration));
@@ -162,12 +176,12 @@ public sealed class GitHubAutomationPage : UserControl
         split.Panel1.Controls.Add(changedPanel);
         split.Panel2.Controls.Add(activityPanel);
 
-        var body = new Panel { Dock = DockStyle.Fill };
+        var body = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
         body.Controls.Add(split);
         body.Controls.Add(_autoSyncStatusLabel);
         body.Controls.Add(_statusLabel);
         body.Controls.Add(actions);
-        body.Controls.Add(_commitMessageBox);
+        body.Controls.Add(commitMessagePanel);
         body.Controls.Add(tokenNote);
         body.Controls.Add(form);
 
@@ -374,11 +388,11 @@ public sealed class GitHubAutomationPage : UserControl
         {
             Text = label,
             AutoSize = true,
-            Anchor = AnchorStyles.Left,
-            Margin = new Padding(0, 8, 12, 4)
+            Anchor = AnchorStyles.Left | AnchorStyles.Top,
+            Margin = new Padding(0, 7, 12, 4)
         };
 
-        editor.Dock = DockStyle.Fill;
+        editor.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
         editor.Margin = new Padding(0, 4, 8, 4);
 
         host.Controls.Add(caption, 0, row);
