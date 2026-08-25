@@ -86,10 +86,11 @@ public sealed class SocialMediaManagerPage : UserControl
 
         // Platform status panel (polished UI): shows supported/coming-soon and configured state
         _platformStatusPanel.Dock = DockStyle.Top;
-        _platformStatusPanel.Height = 48;
-        _platformStatusPanel.Padding = new Padding(0, 8, 0, 8);
-        _platformStatusPanel.AutoSize = true;
-        _platformStatusPanel.WrapContents = false;
+        _platformStatusPanel.Height = 84;
+        _platformStatusPanel.Padding = new Padding(0, 8, 0, 4);
+        _platformStatusPanel.AutoSize = false;
+        _platformStatusPanel.WrapContents = true;
+        _platformStatusPanel.AutoScroll = true;
         _postCount.Minimum = 1;
         _postCount.Maximum = 100;
         _postCount.Value = 3;
@@ -99,8 +100,7 @@ public sealed class SocialMediaManagerPage : UserControl
         _imagesPerPost.Value = 2;
 
         _platformList.CheckOnClick = true;
-        _platformList.Dock = DockStyle.Fill;
-        _platformList.Height = 80; // reasonable default
+        _platformList.Height = 104;
 
         // Platforms will be populated during OnLoad from registered adapters
         _platformList.ItemCheck += (_, _) => UpdatePlatformState();
@@ -112,8 +112,9 @@ public sealed class SocialMediaManagerPage : UserControl
         _captionModeBox.SelectedItem = CaptionMode.Manual;
 
         _captionBox.Multiline = true;
-        _captionBox.Height = 70;
+        _captionBox.Height = 84;
         _captionBox.ScrollBars = ScrollBars.Vertical;
+        _captionBox.PlaceholderText = "Write your caption here. For AI-assisted mode, write a short idea such as: New product launch";
         _captionBox.Text = "New post #{Index}/{Total} on {Platform} ({Date})";
 
         _facebookTokenBox.UseSystemPasswordChar = true;
@@ -122,6 +123,8 @@ public sealed class SocialMediaManagerPage : UserControl
         {
             Dock = DockStyle.Top,
             AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            GrowStyle = TableLayoutPanelGrowStyle.AddRows,
             ColumnCount = 3,
             Padding = new Padding(0, 0, 0, 8)
         };
@@ -134,7 +137,7 @@ public sealed class SocialMediaManagerPage : UserControl
         AddField(setup, 2, "Images per post", _imagesPerPost);
         AddField(setup, 3, "Platforms", _platformList);
         AddField(setup, 4, "Caption mode", _captionModeBox);
-        AddField(setup, 5, "Caption / template", _captionBox);
+        AddField(setup, 5, "Caption / template / idea", _captionBox);
 
         _platformNote.Text = string.Empty;
         _platformNote.AutoSize = true;
@@ -162,6 +165,8 @@ public sealed class SocialMediaManagerPage : UserControl
         {
             Dock = DockStyle.Top,
             AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            GrowStyle = TableLayoutPanelGrowStyle.AddRows,
             ColumnCount = 3,
             Padding = new Padding(0, 0, 0, 8)
         };
@@ -174,18 +179,18 @@ public sealed class SocialMediaManagerPage : UserControl
         AddField(unifiedCompose, 2, "Hashtags", _composeHashtagsBox);
 
         var unifiedButtons = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 40, WrapContents = false };
-        var unifiedPublish = CreateButton("Post Now", OnUnifiedPostNow);
+        var unifiedPublish = CreateButton("Post now to selected platforms", OnUnifiedPostNow);
         unifiedPublish.BackColor = Color.FromArgb(22, 163, 74);
         unifiedButtons.Controls.Add(unifiedPublish);
 
         var draftButtons = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 40, WrapContents = false };
-        draftButtons.Controls.Add(CreateButton("Create drafts", OnCreateDrafts));
+        draftButtons.Controls.Add(CreateButton("1. Create drafts", OnCreateDrafts));
         draftButtons.Controls.Add(CreateButton("Queue selected", OnQueueSelected));
         draftButtons.Controls.Add(CreateButton("Edit caption", OnEditSelected));
         draftButtons.Controls.Add(CreateButton("Cancel", OnCancelSelected));
         draftButtons.Controls.Add(CreateButton("Retry", OnRetrySelected));
 
-        var publishButton = CreateButton("Publish now", OnPublishNow);
+        var publishButton = CreateButton("2. Publish selected draft", OnPublishNow);
         publishButton.BackColor = Color.FromArgb(22, 163, 74);
         draftButtons.Controls.Add(publishButton);
 
@@ -202,6 +207,8 @@ public sealed class SocialMediaManagerPage : UserControl
         {
             Dock = DockStyle.Top,
             AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            GrowStyle = TableLayoutPanelGrowStyle.AddRows,
             ColumnCount = 3,
             Padding = new Padding(0, 0, 0, 8)
         };
@@ -282,16 +289,16 @@ public sealed class SocialMediaManagerPage : UserControl
         lowerSplit.Panel1.Controls.Add(queuePanel);
         lowerSplit.Panel2.Controls.Add(activityPanel);
 
-        var body = new Panel { Dock = DockStyle.Fill };
+        var body = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
         body.Controls.Add(lowerSplit);
         body.Controls.Add(_facebookStatus);
         body.Controls.Add(fbButtons);
         body.Controls.Add(facebookConfig);
         body.Controls.Add(facebookTitle);
-        body.Controls.Add(draftButtons);
         body.Controls.Add(unifiedButtons);
         body.Controls.Add(unifiedCompose);
         body.Controls.Add(unifiedTitle);
+        body.Controls.Add(draftButtons);
         body.Controls.Add(_platformNote);
         body.Controls.Add(setup);
 
@@ -340,7 +347,7 @@ public sealed class SocialMediaManagerPage : UserControl
             {
                 Text = adapter.DisplayName,
                 AutoSize = false,
-                Width = 180,
+                Width = 125,
                 Height = 32,
                 TextAlign = ContentAlignment.MiddleLeft,
                 Padding = new Padding(8, 0, 8, 0),
@@ -352,7 +359,7 @@ public sealed class SocialMediaManagerPage : UserControl
             var badge = new Label
             {
                 AutoSize = false,
-                Width = 110,
+                Width = 88,
                 Height = 22,
                 TextAlign = ContentAlignment.MiddleCenter,
                 Dock = DockStyle.Right,
@@ -424,7 +431,7 @@ public sealed class SocialMediaManagerPage : UserControl
 
             var card = new Panel
             {
-                Width = 300,
+                Width = 225,
                 Height = 36,
                 BackColor = Color.White,
                 Margin = new Padding(0, 0, 8, 0),
@@ -885,11 +892,11 @@ public sealed class SocialMediaManagerPage : UserControl
         {
             Text = label,
             AutoSize = true,
-            Anchor = AnchorStyles.Left,
-            Margin = new Padding(0, 8, 12, 4)
+            Anchor = AnchorStyles.Left | AnchorStyles.Top,
+            Margin = new Padding(0, 7, 12, 4)
         };
 
-        editor.Dock = DockStyle.Fill;
+        editor.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
         editor.Margin = new Padding(0, 4, 8, 4);
 
         host.Controls.Add(caption, 0, row);

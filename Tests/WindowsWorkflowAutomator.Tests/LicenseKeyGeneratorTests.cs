@@ -38,7 +38,8 @@ public class LicenseKeyGeneratorTests
     public void Decode_TamperedKey_Throws()
     {
         var key = LicenseKeyGenerator.Generate("PRO", DateTimeOffset.UtcNow.AddYears(1));
-        var tampered = key.Substring(0, key.Length - 1) + "0";
+        var replacement = key[^1] == '0' ? '1' : '0';
+        var tampered = key[..^1] + replacement;
 
         Assert.False(LicenseKeyGenerator.TryParse(tampered, out _));
         Assert.Throws<FormatException>(() => LicenseKeyGenerator.Decode(tampered));
