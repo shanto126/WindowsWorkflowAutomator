@@ -1,84 +1,117 @@
 # Windows Workflow Automator
 
-A Windows desktop application for organizing everyday computer work: launching apps and websites, automating simple workflows, organizing files, scheduling tasks, and keeping activity logs.
+Windows Workflow Automator is a Windows desktop application that helps automate repetitive desktop tasks, manage files, schedule workflows, and orchestrate multi-platform social posts and GitHub automation — built as a phased university project with an industry-style architecture.
 
-This repository is a **university C# project** with an industry-style layout. Features are added in phases. Phase 1 (foundation) and Phase 3 (File Organizer) are in place.
+> Quick note: read [PROJECT_STATUS.md](PROJECT_STATUS.md) before making changes — it reflects the current phase and integration status.
 
-Team members: read **[PROJECT_STATUS.md](PROJECT_STATUS.md)** at the start of every session so you know the current phase, owner, and next step.
+## Highlights / Features
 
-## Current status
+- Workflow Automation: create simple workflows composed of actions (open application, open folder, open website) and run them on demand or via scheduler.
+- Task Scheduler: schedule saved workflows to run once, daily, or weekly. (Automatic scheduled execution is gated by license tier.)
+- File Organizer: rule-based file moves/copies/renames with a download-folder monitor.
+- GitHub Automation: configure a local repository, commit changes locally, and push manually; Smart Auto Sync (local auto-commit) is available (Premium gating applies).
+- Social Media Manager: compose multi-platform drafts from an image folder, queue posts, and publish to supported platforms (Facebook, Instagram, YouTube, TikTok, Reddit, Threads). Some integrations are marked "Coming Soon" where noted.
+- Licensing: local Free vs Premium license system (local activation, validation, and UI). Certain premium features are gated (automatic scheduler starts, Smart Auto Sync, workflow limits, etc.).
+- Logging & persistence: EF Core + SQLite for local storage and a file-based application logger.
 
-Phase 1 — architecture and GUI shell:
+## Tech stack
 
-- Visual Studio 2022 compatible WinForms app on **.NET 8**
-- Layered folders (UI, services, data, repositories)
-- SQLite + Entity Framework Core for local storage
-- Dependency injection via `Microsoft.Extensions.Hosting`
-- File logging and JSON user settings
-- Main window with sidebar navigation and placeholder module pages
+- .NET 8 (WinForms)
+- C# 12
+- Microsoft.Extensions.Hosting / DI
+- EF Core (SQLite provider)
+- xUnit for tests
 
-Phase 3 — File Organizer:
+## Current status (short)
 
-- Extension-based rules (move / copy / rename)
-- Download folder monitor (`FileSystemWatcher`)
-- File Organizer page: folder picker, rule list, monitoring toggle, activity log
-- Task Scheduler: schedule saved workflows once, daily, or weekly with background execution
+See detailed phase status in PROJECT_STATUS.md. Key points:
+- Social Media Manager, GitHub automation, Workflow engine, Scheduler, and File Organizer are implemented.
+- Local license service and UI are present; premium gating logic for scheduler/auto-sync/workflow limits has been added.
+- Tests are present and passing locally.
 
-Other feature modules (workflow engine, GitHub, Facebook, license keys, and so on) are **not implemented yet**. LinkedIn is shown as **Coming Soon**.
+## Getting started (developer)
 
-## Requirements
-
+Prerequisites:
 - Windows 10 or later
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) or Visual Studio 2022 (17.8+) with the .NET desktop workload
 
-## Open in Visual Studio 2022
+Open and run:
+1. git clone <repo>
+2. cd WindowsWorkflowAutomator
+3. dotnet build WindowsWorkflowAutomator.sln
+4. dotnet test WindowsWorkflowAutomator.sln
+5. dotnet run --project Source/WindowsWorkflowAutomator
 
-1. Open `WindowsWorkflowAutomator.sln`
-2. Set `WindowsWorkflowAutomator` as the startup project
-3. Press F5
+Or open `WindowsWorkflowAutomator.sln` in Visual Studio and run the `WindowsWorkflowAutomator` startup project.
 
-## Build and run from the command line
+## Configuration and platform credentials
 
-```bash
-dotnet build WindowsWorkflowAutomator.sln
-dotnet run --project Source/WindowsWorkflowAutomator
+Several integrations require API credentials or tokens. Place these in the Settings page in the application UI or in the local configuration when available. Summary:
+
+- Facebook / Instagram (Meta): App ID, Page ID, and Page access token. The token is stored encrypted locally. If missing, the app will show "not configured" and block publish operations.
+- YouTube: OAuth 2.0 access token — required for uploads via the YouTube Data API.
+- TikTok / Reddit / Threads: OAuth or bearer tokens depending on platform — each platform page provides configuration guidance.
+- GitHub: Personal Access Token for push operations (stored encrypted). Local path to repository and remote URL are required for Smart Auto Sync.
+
+See the platform-specific README or the corresponding page under `UI/Pages` for details and examples of required scopes and settings.
+
+## Developer notes & architecture
+
+- Separation of concerns: UI pages (UserControl) call into service layer classes — business logic should live under `Services/` or dedicated feature folders.
+- Database schema: `AppDbContext` sets up tables via `EnsureSchema()` on first run; LicenseInfos, Workflows, ScheduledTasks, SocialPosts, etc., are created automatically.
+- Feature gating: the LicenseService is used at startup and in key UI paths to gate premium features locally.
+
+## Tests
+
+- Tests live under `Tests/WindowsWorkflowAutomator.Tests` (xUnit). Run all tests with `dotnet test`.
+- New tests include Licensing repository/service validation and workflow automation tests.
+
+## How to build a Release package (local)
+
+To produce a Release build and publish the app (non-self-contained):
+
+```powershell
+dotnet publish Source/WindowsWorkflowAutomator -c Release -r win-x64 --self-contained false -o publish\win-x64
 ```
 
-## Solution layout
+The produced executable and DLLs will be in `publish\win-x64`.
 
-```text
-WindowsWorkflowAutomator/
-├── Documentation/          Architecture notes
-├── Source/WindowsWorkflowAutomator/
-│   ├── UI/                 Main window, navigation, placeholder pages
-│   ├── Models/             Plain data objects
-│   ├── Data/               EF Core DbContext
-│   ├── Repositories/       Data access
-│   ├── Services/           Application startup (no Form business logic)
-│   ├── Automation/         Reserved
-│   ├── FileOrganizer/      Reserved
-│   ├── SocialMedia/        Reserved
-│   ├── GitHub/             Reserved
-│   ├── Scheduler/          Reserved
-│   ├── Licensing/          Reserved
-│   ├── Security/           Reserved
-│   ├── Logging/            File logger
-│   ├── Configuration/      Paths, settings, appsettings.json
-│   └── Utilities/          Small helpers
-├── Tests/                  xUnit tests
-└── Assets/                 Icons and images (later)
-```
+## Contribution / Team
 
-Local runtime files (SQLite database and log files) are stored under:
+Primary contributors for this repo:
+- Shanto — core architecture, GitHub automation, Social Media multi-platform orchestration
+- Emam — Workflow Automation and Scheduler
+- Toriqul — Dashboard and UI polish
 
-`%LocalAppData%\WindowsWorkflowAutomator\`
+When contributing:
+1. Read PROJECT_STATUS.md to determine the current phase and owner.
+2. Make focused changes per-phase; commit locally (one commit per focused step) and do not push without reviewer approval.
+3. Keep UI polish separate from business-logic changes.
 
-## Architecture rules
+## Known limitations & future work
 
-- Keep business logic out of `Form` classes
-- UI pages are `UserControl`s hosted in the main window
-- External APIs are not faked; placeholders stay empty until a later phase
+- AI captioning (CaptionMode.AiAssisted) is not yet implemented.
+- Some adapters (LinkedIn, Snapchat) are intentionally marked "Coming Soon" and will block publishing with an explanatory message.
+- Device-limited licensing fields are present but multi-device flows are not yet implemented.
+- Dashboard summary cards still need wiring to live DB counts.
+
+## Demo checklist (quick)
+
+- Run `dotnet run --project Source/WindowsWorkflowAutomator`.
+- Settings → License: activate or test license key (format `WFA-PRO-XXXX-YYYY`).
+- Dashboard → verify counts (workflows, scheduled tasks, social queue).
+- File Organizer → create a rule and test organizing a file.
+- Workflow Automation → create a workflow and Run Now.
+- Task Scheduler → add a schedule and test Run Now (automatic runs require Premium license).
+- GitHub → configure a repo, commit locally, and push manually (push requires PAT and remote).
 
 ## License
 
-Course project. Not a commercial product.
+This project is a course/university project and not intended as a commercial product.
+
+---
+
+If you want, I can now:
+- show full diffs of the committed files (the actual patch contents),
+- commit an improved README (done) and push it if you instruct (I will not push without your explicit go-ahead),
+- produce a detailed pre-demo checklist with sample credentials and exact button paths for the demo.
