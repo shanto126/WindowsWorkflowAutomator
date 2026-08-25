@@ -176,14 +176,20 @@ public sealed class GitHubAutomationPage : UserControl
         split.Panel1.Controls.Add(changedPanel);
         split.Panel2.Controls.Add(activityPanel);
 
-        var body = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
-        body.Controls.Add(split);
-        body.Controls.Add(_autoSyncStatusLabel);
-        body.Controls.Add(_statusLabel);
-        body.Controls.Add(actions);
-        body.Controls.Add(commitMessagePanel);
-        body.Controls.Add(tokenNote);
-        body.Controls.Add(form);
+        var setupPanel = new Panel { Dock = DockStyle.Fill, AutoScroll = true, Padding = new Padding(0, 0, 0, 8) };
+        setupPanel.Controls.Add(_autoSyncStatusLabel);
+        setupPanel.Controls.Add(_statusLabel);
+        setupPanel.Controls.Add(actions);
+        setupPanel.Controls.Add(commitMessagePanel);
+        setupPanel.Controls.Add(tokenNote);
+        setupPanel.Controls.Add(form);
+
+        var body = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2 };
+        body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        body.RowStyles.Add(new RowStyle(SizeType.Absolute, 300));
+        body.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        body.Controls.Add(setupPanel, 0, 0);
+        body.Controls.Add(split, 0, 1);
 
         Controls.Add(body);
         Controls.Add(subtitle);

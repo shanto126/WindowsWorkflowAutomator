@@ -289,18 +289,24 @@ public sealed class SocialMediaManagerPage : UserControl
         lowerSplit.Panel1.Controls.Add(queuePanel);
         lowerSplit.Panel2.Controls.Add(activityPanel);
 
-        var body = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
-        body.Controls.Add(lowerSplit);
-        body.Controls.Add(_facebookStatus);
-        body.Controls.Add(fbButtons);
-        body.Controls.Add(facebookConfig);
-        body.Controls.Add(facebookTitle);
-        body.Controls.Add(unifiedButtons);
-        body.Controls.Add(unifiedCompose);
-        body.Controls.Add(unifiedTitle);
-        body.Controls.Add(draftButtons);
-        body.Controls.Add(_platformNote);
-        body.Controls.Add(setup);
+        var setupPanel = new Panel { Dock = DockStyle.Fill, AutoScroll = true, Padding = new Padding(0, 0, 0, 8) };
+        setupPanel.Controls.Add(_facebookStatus);
+        setupPanel.Controls.Add(fbButtons);
+        setupPanel.Controls.Add(facebookConfig);
+        setupPanel.Controls.Add(facebookTitle);
+        setupPanel.Controls.Add(unifiedButtons);
+        setupPanel.Controls.Add(unifiedCompose);
+        setupPanel.Controls.Add(unifiedTitle);
+        setupPanel.Controls.Add(draftButtons);
+        setupPanel.Controls.Add(_platformNote);
+        setupPanel.Controls.Add(setup);
+
+        var body = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2 };
+        body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        body.RowStyles.Add(new RowStyle(SizeType.Absolute, 360));
+        body.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        body.Controls.Add(setupPanel, 0, 0);
+        body.Controls.Add(lowerSplit, 0, 1);
 
         Controls.Add(body);
         Controls.Add(_platformStatusPanel);
