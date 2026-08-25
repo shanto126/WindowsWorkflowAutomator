@@ -271,8 +271,7 @@ public sealed class SocialMediaManagerPage : UserControl
 
         var lowerSplit = new SplitContainer
         {
-            Dock = DockStyle.Top,
-            Height = 400,
+            Dock = DockStyle.Fill,
             Orientation = Orientation.Horizontal,
             SplitterDistance = 260,
             Panel1MinSize = 200,

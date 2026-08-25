@@ -158,8 +158,7 @@ public sealed class GitHubAutomationPage : UserControl
 
         var split = new SplitContainer
         {
-            Dock = DockStyle.Top,
-            Height = 360,
+            Dock = DockStyle.Fill,
             Orientation = Orientation.Horizontal,
             SplitterDistance = 190,
             Panel1MinSize = 150,
