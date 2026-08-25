@@ -69,8 +69,7 @@ partial class MainForm
         statusStrip.Items.Add(statusLabel);
         statusStrip.SizingGrip = false;
 
-        AutoScaleDimensions = new SizeF(7F, 15F);
-        AutoScaleMode = AutoScaleMode.Font;
+        AutoScaleMode = AutoScaleMode.Dpi;
         ClientSize = new Size(1180, 720);
         MinimumSize = new Size(960, 600);
         Text = "Windows Workflow Automator";
