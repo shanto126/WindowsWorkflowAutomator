@@ -30,7 +30,7 @@ public sealed class TikTokPlatformAdapter : ISocialPlatformAdapter
     public Task<PlatformOperationResult> CreatePostAsync(string caption, IReadOnlyList<string> images, CancellationToken cancellationToken = default)
     {
         _logger.Information($"TikTok: CreatePostAsync invoked with {(images?.Count ?? 0)} media items.");
-        return _tikTok.CreatePostAsync(caption, images, cancellationToken);
+        return _tikTok.CreatePostAsync(caption, images ?? Array.Empty<string>(), cancellationToken);
     }
 
     public Task<PlatformOperationResult> UploadMediaAsync(string imagePath, CancellationToken cancellationToken = default) =>

@@ -45,4 +45,18 @@ public sealed class SocialMediaPlannerTests
 
         Assert.Equal("Post 2/5 on Facebook (2026-08-19)", caption);
     }
+
+    [Fact]
+    public void CaptionAssistant_GeneratesCaptionWithoutNetworkOrCredentials()
+    {
+        var caption = CaptionAssistant.Generate("  New product   launch ", new Dictionary<string, string>
+        {
+            ["Platform"] = "Instagram",
+            ["Date"] = "2026-08-25"
+        });
+
+        Assert.Contains("New product launch", caption);
+        Assert.Contains("#Instagram", caption);
+        Assert.Contains("#20260825", caption);
+    }
 }

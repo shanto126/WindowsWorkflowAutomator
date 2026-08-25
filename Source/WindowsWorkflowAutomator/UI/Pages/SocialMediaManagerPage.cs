@@ -508,12 +508,6 @@ public sealed class SocialMediaManagerPage : UserControl
                 return;
             }
 
-            if (mode == CaptionMode.AiAssisted)
-            {
-                ShowWarning("AI caption mode is coming soon (Premium).");
-                return;
-            }
-
             var totalCreated = 0;
             foreach (var platform in selectedPlatforms)
             {

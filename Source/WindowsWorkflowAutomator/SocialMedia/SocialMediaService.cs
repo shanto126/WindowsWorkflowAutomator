@@ -211,14 +211,12 @@ public sealed class SocialMediaService : ISocialMediaService
 
     private static string ResolveCaption(CaptionMode mode, string? captionInput, IReadOnlyDictionary<string, string> variables)
     {
-        if (mode == CaptionMode.AiAssisted)
+        return mode switch
         {
-            throw new InvalidOperationException("AI caption mode is coming soon.");
-        }
-
-        return mode == CaptionMode.Template
-            ? CaptionTemplateRenderer.Render(captionInput, variables)
-            : captionInput ?? string.Empty;
+            CaptionMode.Template => CaptionTemplateRenderer.Render(captionInput, variables),
+            CaptionMode.AiAssisted => CaptionAssistant.Generate(captionInput, variables),
+            _ => captionInput ?? string.Empty
+        };
     }
 
     private static Dictionary<string, string> BuildDefaultTemplateVariables(

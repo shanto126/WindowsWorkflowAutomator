@@ -34,6 +34,7 @@ This file is the team handoff document. Read this first in every new session and
   - GitHub "Smart Auto Sync" is blocked for Free users at the UI level (GitHubAutomationPage warns and reverts to Manual).
   - Workflow creation is limited on Free tier (3 workflows cap enforced in WorkflowService) — Premium lifts this.
 - Tests: New unit tests added for license repository and service; license key generator validation and tamper detection tests added. All tests currently pass locally.
+- AI-assisted captions: a built-in local caption assistant now turns a short brief into a ready-to-edit caption without credentials or network access.
 - Social Media: Multi-platform compose and drafts are implemented; all supported/coming-soon platforms are surfaced in the UI and kept visible with fallback display names when adapters are missing.
 - Scheduler: SchedulerService implements timer-based automatic runs; creation/edit/delete and manual "Run now" flows exist in UI.
 
@@ -50,7 +51,7 @@ This file is the team handoff document. Read this first in every new session and
 | 7 | Done (Facebook integration wired) |
 | 8 | Done (Reddit/Threads/YT/TikTok adapters present) |
 | 9 | In progress — License service + UI present, HMAC-based key validation fixed, premium CTA section added, Activity Logs restored, and gating remains in place for scheduler, GitHub auto-sync, and workflow limits; added unit tests. Remaining: final polish and packaging. |
-| 10 | Mostly done — tests exist and pass locally; added license key signing/tamper checks and extra validation coverage. |
+| 10 | Mostly done — tests exist and pass locally; added license key signing/tamper checks, local caption assistant coverage, and extra validation coverage. |
 | 11 | In progress — Social page polished; all expected platform entries are visible with explicit coming-soon placeholders, and other pages got targeted polish (Settings, Task Scheduler, GitHub). Dashboard wiring added (summary cards and navigation); recommend a follow-up polish pass for layout and live data optimizations. |
 | 12 | Not started — final README polishing and a Release publish step remain.
 
@@ -65,13 +66,12 @@ This file is the team handoff document. Read this first in every new session and
 
 1. Review the license gating changes and tests locally (this session added them and committed locally). Do not push until reviewed.
 2. Polish the License UX: add upgrade CTA, copy for upgrade flow, and optionally a place to paste/obtain a license from the team.
-3. Dashboard: add summary cards that pull real counts (workflows, scheduled tasks, social queue, license status).
-4. Final integration run: dotnet run → navigate every page and verify no runtime exceptions, then `dotnet build -c Release` and `dotnet test`.
-5. When ready, create Release build (see Steps in handoff) and package for demo.
+3. Final integration run: dotnet run → navigate every page and verify no runtime exceptions, then `dotnet build -c Release` and `dotnet test`.
+4. Release publish output has been created at `publish/win-x64`; run the demo checklist before handing it off.
 
 ## 6. Known limitations (remaining)
 
-- AI captioning mode is not implemented — SocialMediaService throws when AiAssisted mode is selected.
+- AI-assisted captions are local and deterministic; a cloud-backed generative AI provider is not included.
 - Some platform adapters (LinkedIn, Snapchat) are intentionally marked "Coming Soon" and block publishing.
 - Scheduler automatic runs are gated behind Premium — Free tier will not have scheduled timer enabled (the schedule records still exist and manual Run Now is available).
 - Device licensing (device count/limits) are stored but not fully exercised in UI.
@@ -79,8 +79,9 @@ This file is the team handoff document. Read this first in every new session and
 
 ## 7. Build & Test (local)
 
-- Build: PASS (local build succeeded)
-- Tests: 25 passed / 0 failed (local run)
+- Release build: PASS (0 warnings / 0 errors)
+- Tests: 29 passed / 0 failed (local run)
+- Publish: PASS (`publish/win-x64`)
 - Local commit: done (no push performed)
 
 ## 8. How to reproduce locally

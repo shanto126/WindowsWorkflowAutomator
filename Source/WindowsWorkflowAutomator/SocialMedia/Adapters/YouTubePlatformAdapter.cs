@@ -30,7 +30,7 @@ public sealed class YouTubePlatformAdapter : ISocialPlatformAdapter
     public Task<PlatformOperationResult> CreatePostAsync(string caption, IReadOnlyList<string> images, CancellationToken cancellationToken = default)
     {
         _logger.Information($"YouTube: CreatePostAsync invoked with {(images?.Count ?? 0)} files.");
-        return _youTube.CreatePostAsync(caption, images, cancellationToken);
+        return _youTube.CreatePostAsync(caption, images ?? Array.Empty<string>(), cancellationToken);
     }
 
     public Task<PlatformOperationResult> UploadMediaAsync(string imagePath, CancellationToken cancellationToken = default) =>

@@ -11,18 +11,19 @@ Summary of changes in this local update:
 - tests: Added LicensingTests to validate LicenseRepository and LicenseService (in-memory SQLite)
 - docs: PROJECT_STATUS.md updated to reflect real repo state; README.md updated with full project overview and demo checklist
 - docs: Added DEMO_CHECKLIST.md for demo-run guidance
+- feat(social): add a built-in local caption assistant for AiAssisted mode; it generates an editable caption from a brief without an API key or network access
+- fix(social): guard Instagram, TikTok, and YouTube adapter media collections to remove nullable build warnings
 
 Notes for reviewer:
 - These are local commits only; push not performed here.
-- Tests pass locally (25/25). Please run `dotnet test` after pulling.
-- Publishing: `dotnet publish Source/WindowsWorkflowAutomator -c Release -r win-x64 --self-contained false` produces release artifacts under publish\win-x64
+- Release build passes with 0 warnings; tests pass locally (29/29). Please run `dotnet test` after pulling.
+- Publishing completed: `publish\win-x64` contains the win-x64 framework-dependent release package.
 
 Suggested PR title: "feat(licensing): local premium gating for scheduler & GitHub auto-sync; add license tests and docs"
 Suggested PR description: include the summary above and explicitly note that automatic scheduled tasks are now gated by license tier and that Smart Auto Sync remains a UI-gated Premium feature (does not auto-push to GitHub).
 
 Remaining work before final release:
-- Implement AI captioning (AiAssisted) if required
 - Add nicer License upgrade CTA in Settings (link/flow to obtain license)
-- Dashboard: wire summary cards to live data
+- Run a full manual UI walkthrough with real demo credentials before distribution
 
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>

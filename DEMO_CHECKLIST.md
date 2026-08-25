@@ -5,7 +5,7 @@ This document is intended to guide the demo flow and includes the exact steps an
 1) Local pre-checks
    - dotnet build WindowsWorkflowAutomator.sln  -> must pass
    - dotnet test WindowsWorkflowAutomator.sln   -> must pass (all tests)
-   - (Optional) dotnet publish Source/WindowsWorkflowAutomator -c Release -r win-x64 --self-contained false -o publish\win-x64
+   - Release package is available at `publish\win-x64` (requires the .NET 8 Desktop Runtime on the demo machine).
 
 2) Start app
    - Run in debugger (Visual Studio) or run: dotnet run --project Source/WindowsWorkflowAutomator
@@ -41,7 +41,7 @@ This document is intended to guide the demo flow and includes the exact steps an
 8) Social Media Manager
    - Configure Facebook (AppId/PageId/Token) or another configured platform
    - Create drafts from an image folder, queue posts, and Publish one post manually
-   - If AI caption mode is selected, explain that AiAssisted mode is coming soon and will produce a message
+   - Select AI-assisted caption mode, enter a short brief, and create drafts. Show the generated, editable caption; it works locally and requires no API credentials.
 
 9) Wrap up
    - Show logs: %LocalAppData%\WindowsWorkflowAutomator\

@@ -30,7 +30,7 @@ public sealed class InstagramPlatformAdapter : ISocialPlatformAdapter
     public Task<PlatformOperationResult> CreatePostAsync(string caption, IReadOnlyList<string> images, CancellationToken cancellationToken = default)
     {
         _logger.Information($"Instagram: CreatePostAsync invoked with {(images?.Count ?? 0)} images.");
-        return _instagram.CreatePostAsync(caption, images, cancellationToken);
+        return _instagram.CreatePostAsync(caption, images ?? Array.Empty<string>(), cancellationToken);
     }
 
     public Task<PlatformOperationResult> UploadMediaAsync(string imagePath, CancellationToken cancellationToken = default) =>

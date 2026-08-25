@@ -90,7 +90,7 @@ When contributing:
 
 ## Known limitations & future work
 
-- AI captioning (CaptionMode.AiAssisted) is not yet implemented.
+- AI-assisted captions use a built-in, local caption assistant. It turns a short brief into a ready-to-edit caption without sending data to an external service; a cloud-backed generative AI provider is not included.
 - Some adapters (LinkedIn, Snapchat) are intentionally marked "Coming Soon" and will block publishing with an explanatory message.
 - Device-limited licensing fields are present but multi-device flows are not yet implemented.
 - Dashboard summary cards are now wired to live DB counts (workflows, scheduled tasks, queued social posts, license status).
