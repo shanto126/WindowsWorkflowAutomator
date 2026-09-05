@@ -40,22 +40,27 @@ public sealed class GitHubService : IGitHubService
             return null;
         }
 
-        return new GitHubRepositorySnapshot
+        var snapshot = new GitHubRepositorySnapshot
         {
             LocalPath = config.LocalPath,
             RemoteUrl = config.RemoteUrl,
-            Branch = config.Branch,
             CommitMessageTemplate = config.CommitMessageTemplate,
             HasPersonalAccessToken = !string.IsNullOrWhiteSpace(_settings.Current.GitHubPatProtected),
-            SyncMode = config.SyncMode ?? GitHubSyncMode.Manual,
+            SyncMode = NormalizeSyncMode(config.SyncMode),
             InactivitySeconds = config.InactivitySeconds > 0 ? config.InactivitySeconds : 30
         };
+
+        if (snapshot.SyncMode == GitHubSyncMode.SmartAutoSync && !string.IsNullOrWhiteSpace(snapshot.LocalPath))
+        {
+            StartAutoSync(snapshot.LocalPath, snapshot.InactivitySeconds);
+        }
+
+        return snapshot;
     }
 
     public async Task<GitHubOperationResult> ConfigureRepositoryAsync(
         string localPath,
         string remoteUrl,
-        string branch,
         string? commitMessageTemplate = null,
         string? personalAccessToken = null,
         string? syncMode = null,
@@ -64,7 +69,7 @@ public sealed class GitHubService : IGitHubService
     {
         localPath = localPath?.Trim() ?? string.Empty;
         remoteUrl = remoteUrl?.Trim() ?? string.Empty;
-        branch = branch?.Trim() ?? string.Empty;
+        syncMode = NormalizeSyncMode(syncMode);
         commitMessageTemplate = string.IsNullOrWhiteSpace(commitMessageTemplate)
             ? "chore: backup changes"
             : commitMessageTemplate.Trim();
@@ -86,14 +91,6 @@ public sealed class GitHubService : IGitHubService
                 cancellationToken);
         }
 
-        if (branch.Length == 0)
-        {
-            return await FailAndLogAsync(
-                GitHubOperationStatus.InvalidBranch,
-                "Branch name is required.",
-                cancellationToken);
-        }
-
         var gitAvailable = await EnsureGitAvailableAsync(cancellationToken);
         if (!gitAvailable.Succeeded)
         {
@@ -108,16 +105,6 @@ public sealed class GitHubService : IGitHubService
                 "The selected folder is not a valid git repository.",
                 cancellationToken,
                 [isRepo.Error]);
-        }
-
-        var branchExists = await RunGitAsync(localPath, ["show-ref", "--verify", $"refs/heads/{branch}"], cancellationToken);
-        if (!branchExists.Succeeded)
-        {
-            return await FailAndLogAsync(
-                GitHubOperationStatus.InvalidBranch,
-                $"Branch '{branch}' does not exist locally.",
-                cancellationToken,
-                [branchExists.Error]);
         }
 
         var hasOrigin = await RunGitAsync(localPath, ["remote", "get-url", "origin"], cancellationToken);
@@ -148,12 +135,8 @@ public sealed class GitHubService : IGitHubService
 
             config.LocalPath = localPath;
             config.RemoteUrl = remoteUrl;
-            config.Branch = branch;
             config.CommitMessageTemplate = commitMessageTemplate;
-            if (!string.IsNullOrWhiteSpace(syncMode))
-            {
-                config.SyncMode = syncMode!;
-            }
+            config.SyncMode = syncMode;
 
             if (inactivitySeconds.HasValue)
             {
@@ -187,8 +170,8 @@ public sealed class GitHubService : IGitHubService
             _settings.Save();
         }
 
-        await AddActivityAsync("Information", "GitHub", $"Repository configured: {localPath} ({branch})", cancellationToken);
-        _logger.Information($"GitHub repository configured: {localPath} ({branch})");
+        await AddActivityAsync("Information", "GitHub", $"Repository configured: {localPath}", cancellationToken);
+        _logger.Information($"GitHub repository configured: {localPath}");
         return GitHubOperationResult.Ok("Repository configuration saved.");
     }
 
@@ -208,7 +191,79 @@ public sealed class GitHubService : IGitHubService
                 "Configure a repository first."));
         }
 
-        var status = await RunGitAsync(config.LocalPath, ["status", "--porcelain"], cancellationToken);
+        return await GetStatusForPathAsync(config.LocalPath, cancellationToken);
+    }
+
+    public async Task<GitHubStatusResult> GetStatusForRepositoryAsync(
+        string localPath,
+        CancellationToken cancellationToken = default)
+    {
+        var gitAvailable = await EnsureGitAvailableAsync(cancellationToken);
+        if (!gitAvailable.Succeeded)
+        {
+            return GitHubStatusResult.FromFailure(gitAvailable);
+        }
+
+        return await GetStatusForPathAsync(localPath, cancellationToken);
+    }
+
+    public async Task<string?> GetRemoteUrlAsync(
+        string localPath,
+        CancellationToken cancellationToken = default)
+    {
+        var remote = await RunGitAsync(localPath, ["remote", "get-url", "origin"], cancellationToken);
+        return remote.Succeeded && !string.IsNullOrWhiteSpace(remote.Output)
+            ? remote.Output.Trim()
+            : null;
+    }
+
+    public async Task<GitHubOperationResult> InitializeRepositoryAsync(
+        string localPath,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(localPath) || !Directory.Exists(localPath))
+        {
+            return GitHubOperationResult.Fail(GitHubOperationStatus.InvalidRepository, "The selected folder does not exist.");
+        }
+
+        var result = await RunGitAsync(localPath, ["init"], cancellationToken);
+        return result.Succeeded
+            ? GitHubOperationResult.Ok("Git repository initialized.")
+            : GitHubOperationResult.Fail(GitHubOperationStatus.InvalidRepository, "Could not initialize the Git repository.", [result.Error]);
+    }
+
+    public async Task SetSelectedRepositoryAsync(
+        string localPath,
+        CancellationToken cancellationToken = default)
+    {
+        localPath = localPath.Trim();
+        var remoteUrl = await GetRemoteUrlAsync(localPath, cancellationToken) ?? string.Empty;
+        using var scope = _scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var config = await db.GitHubRepositories.OrderBy(x => x.Id).FirstOrDefaultAsync(cancellationToken);
+        if (config is null)
+        {
+            return;
+        }
+
+        config.LocalPath = localPath;
+        config.RemoteUrl = remoteUrl;
+        config.UpdatedAtUtc = DateTimeOffset.UtcNow;
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task<GitHubStatusResult> GetStatusForPathAsync(
+        string localPath,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(localPath) || !Directory.Exists(localPath))
+        {
+            return GitHubStatusResult.FromFailure(GitHubOperationResult.Fail(
+                GitHubOperationStatus.InvalidRepository,
+                "The selected repository folder does not exist."));
+        }
+
+        var status = await RunGitAsync(localPath, ["status", "--porcelain"], cancellationToken);
         if (!status.Succeeded)
         {
             var mapped = MapStatusFromGitText(status.Error);
@@ -222,7 +277,7 @@ public sealed class GitHubService : IGitHubService
             Succeeded = true,
             Status = GitHubOperationStatus.Success,
             Message = files.Count == 0
-                ? "Working tree is clean."
+                ? "No changes detected."
                 : $"{files.Count} changed file(s) detected.",
             ChangedFilesCount = files.Count,
             ChangedFiles = files
@@ -296,14 +351,19 @@ public sealed class GitHubService : IGitHubService
             return GitHubOperationResult.Fail(GitHubOperationStatus.NotConfigured, "Configure a repository first.");
         }
 
-        var branchCheck = await RunGitAsync(config.LocalPath, ["show-ref", "--verify", $"refs/heads/{config.Branch}"], cancellationToken);
-        if (!branchCheck.Succeeded)
+        var branchValidation = await ValidateCurrentBranchAsync(config.LocalPath, cancellationToken);
+        if (!branchValidation.Result.Succeeded)
+        {
+            return branchValidation.Result;
+        }
+
+        var remoteUrl = await GetRemoteUrlAsync(config.LocalPath, cancellationToken);
+        if (string.IsNullOrWhiteSpace(remoteUrl))
         {
             return await FailAndLogAsync(
-                GitHubOperationStatus.InvalidBranch,
-                $"Branch '{config.Branch}' does not exist locally.",
-                cancellationToken,
-                [branchCheck.Error]);
+                GitHubOperationStatus.InvalidRemote,
+                "No GitHub remote URL is configured for this repository.",
+                cancellationToken);
         }
 
         var token = GetToken();
@@ -316,13 +376,16 @@ public sealed class GitHubService : IGitHubService
         }
 
         var header = Convert.ToBase64String(Encoding.UTF8.GetBytes($"x-access-token:{token}"));
+        _logger.Information(
+            $"GitHub push target - Current repository: {config.LocalPath}; " +
+            $"Current branch: {branchValidation.Branch}; Remote URL: {remoteUrl}");
         var pushArgs = new[]
         {
             "-c",
             $"http.extraHeader=AUTHORIZATION: basic {header}",
             "push",
             "origin",
-            config.Branch
+            branchValidation.Branch
         };
 
         var push = await RunGitAsync(config.LocalPath, pushArgs, cancellationToken);
@@ -332,8 +395,8 @@ public sealed class GitHubService : IGitHubService
             return await FailAndLogAsync(mapped, "Push failed.", cancellationToken, [push.Error, push.Output]);
         }
 
-        await AddActivityAsync("Information", "GitHub", $"Pushed branch '{config.Branch}' to origin.", cancellationToken);
-        _logger.Information($"Git push completed for branch '{config.Branch}'.");
+        await AddActivityAsync("Information", "GitHub", $"Pushed branch '{branchValidation.Branch}' to origin.", cancellationToken);
+        _logger.Information($"Git push completed for branch '{branchValidation.Branch}'.");
         return GitHubOperationResult.Ok("Push completed successfully.", new[] { push.Output });
     }
 
@@ -374,6 +437,41 @@ public sealed class GitHubService : IGitHubService
             return string.Empty;
         }
     }
+
+    private async Task<(GitHubOperationResult Result, string Branch)> ValidateCurrentBranchAsync(
+        string localPath,
+        CancellationToken cancellationToken)
+    {
+        var currentBranch = await RunGitAsync(localPath, ["branch", "--show-current"], cancellationToken);
+        var branch = currentBranch.Output.Trim();
+        if (!currentBranch.Succeeded || string.IsNullOrWhiteSpace(branch))
+        {
+            return (await FailAndLogAsync(
+                GitHubOperationStatus.InvalidBranch,
+                "No active git branch found. Please create a commit first.",
+                cancellationToken,
+                [currentBranch.Output, currentBranch.Error]), string.Empty);
+        }
+
+        var branchCheck = await RunGitAsync(localPath, ["show-ref", "--verify", $"refs/heads/{branch}"], cancellationToken);
+        if (!branchCheck.Succeeded)
+        {
+            return (await FailAndLogAsync(
+                GitHubOperationStatus.InvalidBranch,
+                "The current git branch is not available locally.",
+                cancellationToken,
+                [branchCheck.Error]), string.Empty);
+        }
+
+        return (GitHubOperationResult.Ok("Local branch is valid."), branch);
+    }
+
+    private static string NormalizeSyncMode(string? syncMode) => syncMode switch
+    {
+        GitHubSyncMode.SmartAutoSync or "Smart Auto Sync" => GitHubSyncMode.SmartAutoSync,
+        GitHubSyncMode.Scheduled or "Scheduled (Coming Soon)" => GitHubSyncMode.Scheduled,
+        _ => GitHubSyncMode.Manual
+    };
 
     private async Task<GitHubOperationResult> FailAndLogAsync(
         GitHubOperationStatus status,

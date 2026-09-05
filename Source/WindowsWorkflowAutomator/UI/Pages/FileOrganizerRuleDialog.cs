@@ -1,4 +1,5 @@
 using WindowsWorkflowAutomator.Models;
+using WindowsWorkflowAutomator.UI;
 
 namespace WindowsWorkflowAutomator.UI.Pages;
 
@@ -86,17 +87,15 @@ internal sealed class FileOrganizerRuleDialog : Form
     private Button CreateBrowseButton()
     {
         var button = new Button { Text = "Browse", Dock = DockStyle.Fill };
-        button.Click += (_, _) =>
+        button.Click += async (_, _) =>
         {
-            using var dialog = new FolderBrowserDialog
+            var folderPath = await FileDialogService.SelectFolderAsync(
+                "Choose the destination folder",
+                _destinationBox.Text,
+                SynchronizationContext.Current);
+            if (folderPath is not null)
             {
-                Description = "Choose the destination folder",
-                UseDescriptionForTitle = true,
-                SelectedPath = _destinationBox.Text
-            };
-            if (dialog.ShowDialog(this) == DialogResult.OK)
-            {
-                _destinationBox.Text = dialog.SelectedPath;
+                _destinationBox.Text = folderPath;
             }
         };
         return button;

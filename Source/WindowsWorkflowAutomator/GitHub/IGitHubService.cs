@@ -7,7 +7,6 @@ public interface IGitHubService
     Task<GitHubOperationResult> ConfigureRepositoryAsync(
         string localPath,
         string remoteUrl,
-        string branch,
         string? commitMessageTemplate = null,
         string? personalAccessToken = null,
         string? syncMode = null,
@@ -15,6 +14,22 @@ public interface IGitHubService
         CancellationToken cancellationToken = default);
 
     Task<GitHubStatusResult> GetStatusAsync(CancellationToken cancellationToken = default);
+
+    Task<GitHubStatusResult> GetStatusForRepositoryAsync(
+        string localPath,
+        CancellationToken cancellationToken = default);
+
+    Task<string?> GetRemoteUrlAsync(
+        string localPath,
+        CancellationToken cancellationToken = default);
+
+    Task<GitHubOperationResult> InitializeRepositoryAsync(
+        string localPath,
+        CancellationToken cancellationToken = default);
+
+    Task SetSelectedRepositoryAsync(
+        string localPath,
+        CancellationToken cancellationToken = default);
 
     Task<GitHubOperationResult> CommitAsync(string message, CancellationToken cancellationToken = default);
 

@@ -11,6 +11,7 @@ using WindowsWorkflowAutomator.Security;
 
 namespace WindowsWorkflowAutomator.Tests;
 
+
 public sealed class GitHubAutomationTests
 {
     [Fact]
@@ -24,7 +25,7 @@ public sealed class GitHubAutomationTests
 
         try
         {
-            RunGit(repoPath, "init", "-b", "develop");
+            RunGit(repoPath, "init");
             RunGit(repoPath, "config", "user.email", "test@example.com");
             RunGit(repoPath, "config", "user.name", "WWA Test");
 
@@ -52,7 +53,6 @@ public sealed class GitHubAutomationTests
             var configured = await gitHub.ConfigureRepositoryAsync(
                 repoPath,
                 "https://github.com/example/repo.git",
-                "develop",
                 "chore: backup changes",
                 "dummy-token");
 

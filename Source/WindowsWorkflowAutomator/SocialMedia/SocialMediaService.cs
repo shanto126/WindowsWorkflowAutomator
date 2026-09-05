@@ -44,8 +44,25 @@ public sealed class SocialMediaService : ISocialMediaService
         SocialFolderDraftRequest request,
         CancellationToken cancellationToken = default)
     {
-        var imagePaths = SocialPostPlanner.GetSupportedImagesFromFolder(request.FolderPath);
-        var groups = SocialPostPlanner.SplitImagePaths(imagePaths, request.PostCount, request.ImagesPerPost);
+        IReadOnlyList<IReadOnlyList<string>> groups;
+        if (request.MediaPaths.Count > 0)
+        {
+            groups = SocialPostPlanner.SplitImagePaths(request.MediaPaths, request.PostCount, request.ImagesPerPost);
+        }
+        else if (request.Platform == SocialPlatform.Facebook && string.IsNullOrWhiteSpace(request.FolderPath))
+        {
+            if (request.PostCount <= 0)
+            {
+                throw new ArgumentException("Post count must be greater than zero.", nameof(request));
+            }
+
+            groups = Enumerable.Repeat<IReadOnlyList<string>>([], request.PostCount).ToArray();
+        }
+        else
+        {
+            var imagePaths = await SocialPostPlanner.GetSupportedMediaFromFolderAsync(request.FolderPath, cancellationToken);
+            groups = SocialPostPlanner.SplitImagePaths(imagePaths, request.PostCount, request.ImagesPerPost);
+        }
 
         var posts = new List<SocialPost>();
         for (var i = 0; i < groups.Count; i++)

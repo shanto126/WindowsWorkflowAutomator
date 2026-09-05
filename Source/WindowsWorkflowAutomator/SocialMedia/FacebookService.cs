@@ -100,13 +100,8 @@ public sealed class FacebookService : IFacebookService
             return validation;
         }
 
-        if (images == null || images.Count == 0)
-        {
-            return PlatformOperationResult.Fail(PlatformOperationStatus.Error, "Facebook requires at least one media item.");
-        }
-
         var mediaIds = new List<string>();
-        foreach (var item in images)
+        foreach (var item in images ?? [])
         {
             var upload = await UploadMediaAsync(item, cancellationToken);
             if (!upload.Succeeded)

@@ -8,7 +8,7 @@ public sealed class GitHubRepository
 
     public string RemoteUrl { get; set; } = string.Empty;
 
-    public string Branch { get; set; } = "develop";
+    public string Branch { get; set; } = string.Empty;
 
     public string CommitMessageTemplate { get; set; } = "chore: backup changes";
 

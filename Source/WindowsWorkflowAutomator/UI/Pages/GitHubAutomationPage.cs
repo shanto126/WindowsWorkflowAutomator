@@ -1,5 +1,6 @@
 using WindowsWorkflowAutomator.GitHub;
 using WindowsWorkflowAutomator.Licensing;
+using WindowsWorkflowAutomator.UI;
 
 namespace WindowsWorkflowAutomator.UI.Pages;
 
@@ -10,7 +11,6 @@ public sealed class GitHubAutomationPage : UserControl
 
     private readonly TextBox _localPathBox = new();
     private readonly TextBox _remoteUrlBox = new();
-    private readonly TextBox _branchBox = new();
     private readonly TextBox _templateBox = new();
     private readonly TextBox _patBox = new();
     private readonly TextBox _commitMessageBox = new();
@@ -61,7 +61,6 @@ public sealed class GitHubAutomationPage : UserControl
         _patBox.UseSystemPasswordChar = true;
         _patBox.TextChanged += (_, _) => _tokenEdited = true;
         _templateBox.Text = "chore: backup changes";
-        _branchBox.Text = "develop";
 
         var form = new TableLayoutPanel
         {
@@ -76,11 +75,10 @@ public sealed class GitHubAutomationPage : UserControl
         form.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         form.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 130));
 
-        AddFieldRow(form, 0, "Local repository folder", _localPathBox, CreateButton("Browse…", OnBrowseFolder));
+        AddFieldRow(form, 0, "Current repository path", _localPathBox, CreateButton("Browse…", OnBrowseFolder));
         AddFieldRow(form, 1, "Remote URL (origin)", _remoteUrlBox);
-        AddFieldRow(form, 2, "Branch", _branchBox);
-        AddFieldRow(form, 3, "Commit template", _templateBox);
-        AddFieldRow(form, 4, "Personal Access Token", _patBox);
+        AddFieldRow(form, 2, "Commit template", _templateBox);
+        AddFieldRow(form, 3, "Personal Access Token", _patBox);
 
         // Sync mode and inactivity settings
         _syncModeCombo.DropDownStyle = ComboBoxStyle.DropDownList;
@@ -127,6 +125,8 @@ public sealed class GitHubAutomationPage : UserControl
         actions.Controls.Add(pushButton);
 
         _statusLabel.Dock = DockStyle.Top;
+        _statusLabel.AutoSize = true;
+        _statusLabel.MaximumSize = new Size(1100, 0);
         _statusLabel.Padding = new Padding(0, 8, 0, 4);
         _statusLabel.Text = "Status: configure a repository first.";
 
@@ -160,8 +160,8 @@ public sealed class GitHubAutomationPage : UserControl
         {
             Dock = DockStyle.Fill,
             Orientation = Orientation.Horizontal,
-            SplitterDistance = 190,
-            Panel1MinSize = 150,
+            SplitterDistance = 260,
+            Panel1MinSize = 180,
             Panel2MinSize = 120
         };
 
@@ -196,62 +196,88 @@ public sealed class GitHubAutomationPage : UserControl
         Controls.Add(title);
     }
 
-    private async void OnLoad(object? sender, EventArgs e)
+    private void OnLoad(object? sender, EventArgs e)
     {
-        var config = await _gitHubService.GetConfigurationAsync();
-        if (config is not null)
-        {
-            _localPathBox.Text = config.LocalPath;
-            _remoteUrlBox.Text = config.RemoteUrl;
-            _branchBox.Text = config.Branch;
-            _templateBox.Text = config.CommitMessageTemplate;
-            if (config.HasPersonalAccessToken)
-            {
-                _patBox.PlaceholderText = "Token already stored";
-            }
+        _localPathBox.Clear();
+        _remoteUrlBox.Clear();
+        _changedFilesList.Items.Clear();
+        _statusLabel.Text = "Status: select a Git repository first.";
+        _autoSyncStatusLabel.Text = "Auto-sync: Disabled";
+    }
 
-            // Sync mode UI
-            if (config.SyncMode == GitHubSyncMode.SmartAutoSync)
+    private async void OnBrowseFolder(object? sender, EventArgs e)
+    {
+        var folderPath = await FileDialogService.SelectFolderAsync(
+            "Choose a local git repository folder",
+            _localPathBox.Text,
+            SynchronizationContext.Current);
+        if (folderPath is not null)
+        {
+            await LoadRepositoryAsync(folderPath);
+        }
+    }
+
+    private async Task LoadRepositoryAsync(string folderPath)
+    {
+        _localPathBox.Text = folderPath;
+        _remoteUrlBox.Clear();
+        _changedFilesList.Items.Clear();
+        _statusLabel.Text = $"Repository: {folderPath}\r\nStatus: loading...";
+        await _gitHubService.SetSelectedRepositoryAsync(folderPath);
+
+        var gitFolder = Path.Combine(folderPath, ".git");
+        if (!Directory.Exists(gitFolder))
+        {
+            var initialize = MessageBox.Show(
+                FindForm(),
+                "This folder is not a Git repository. Initialize Git?",
+                "Initialize Repository",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+            if (initialize == DialogResult.Yes)
             {
-                _syncModeCombo.SelectedItem = "Smart Auto Sync";
+                var result = await _gitHubService.InitializeRepositoryAsync(folderPath);
+                ShowResult(result, "Initialize Repository");
+                if (!result.Succeeded)
+                {
+                    return;
+                }
             }
             else
             {
-                _syncModeCombo.SelectedItem = "Manual";
+                _statusLabel.Text = $"Repository: {folderPath}\r\nStatus: Not a Git repository.";
+                return;
             }
-
-            _inactivityCombo.SelectedIndex = config.InactivitySeconds switch
-            {
-                60 => 1,
-                300 => 2,
-                _ => 0
-            };
-
-            _autoSyncStatusLabel.Text = config.SyncMode == GitHubSyncMode.SmartAutoSync
-                ? $"Auto-sync: Watching (inactivity {config.InactivitySeconds}s)"
-                : "Auto-sync: Disabled";
         }
 
-        await RefreshStatusAsync();
-    }
-
-    private void OnBrowseFolder(object? sender, EventArgs e)
-    {
-        using var dialog = new FolderBrowserDialog
+        var remote = await _gitHubService.GetRemoteUrlAsync(folderPath);
+        if (!string.IsNullOrWhiteSpace(remote))
         {
-            Description = "Choose a local git repository folder",
-            UseDescriptionForTitle = true,
-            SelectedPath = _localPathBox.Text
-        };
-
-        if (dialog.ShowDialog(FindForm()) == DialogResult.OK)
-        {
-            _localPathBox.Text = dialog.SelectedPath;
+            _remoteUrlBox.Text = remote;
         }
+        else
+        {
+            _remoteUrlBox.Text = PromptForRemoteUrl() ?? string.Empty;
+        }
+
+        await RefreshStatusAsync(folderPath);
     }
 
     private async void OnSaveConfiguration(object? sender, EventArgs e)
     {
+        if (string.IsNullOrWhiteSpace(_remoteUrlBox.Text))
+        {
+            _remoteUrlBox.Text = PromptForRemoteUrl() ?? string.Empty;
+        }
+
+        if (string.IsNullOrWhiteSpace(_remoteUrlBox.Text))
+        {
+            ShowResult(
+                GitHubOperationResult.Fail(GitHubOperationStatus.InvalidRemote, "Enter a GitHub repository URL before saving."),
+                "Configuration");
+            return;
+        }
+
         var token = _tokenEdited ? _patBox.Text : null;
         // Determine sync settings
         var selectedSync = _syncModeCombo.SelectedItem?.ToString() ?? "Manual";
@@ -286,7 +312,6 @@ public sealed class GitHubAutomationPage : UserControl
         var result = await _gitHubService.ConfigureRepositoryAsync(
             _localPathBox.Text,
             _remoteUrlBox.Text,
-            _branchBox.Text,
             _templateBox.Text,
             token,
             syncMode,
@@ -298,6 +323,9 @@ public sealed class GitHubAutomationPage : UserControl
             _patBox.Text = string.Empty;
             _tokenEdited = false;
             _patBox.PlaceholderText = "Token already stored";
+            _autoSyncStatusLabel.Text = syncMode == GitHubSyncMode.SmartAutoSync
+                ? $"Auto-sync: Watching (inactivity {inactivitySeconds}s)"
+                : "Auto-sync: Disabled";
             await RefreshStatusAsync();
         }
     }
@@ -333,12 +361,16 @@ public sealed class GitHubAutomationPage : UserControl
         await RefreshStatusAsync();
     }
 
-    private async Task RefreshStatusAsync()
+    private async Task RefreshStatusAsync(string? localPath = null)
     {
-        var status = await _gitHubService.GetStatusAsync();
-        _statusLabel.Text = $"Status: {status.Message}";
-
         _changedFilesList.Items.Clear();
+        var repositoryPath = string.IsNullOrWhiteSpace(localPath)
+            ? _localPathBox.Text.Trim()
+            : localPath.Trim();
+        var status = string.IsNullOrWhiteSpace(repositoryPath)
+            ? await _gitHubService.GetStatusAsync()
+            : await _gitHubService.GetStatusForRepositoryAsync(repositoryPath);
+        _statusLabel.Text = $"Repository: {repositoryPath}\r\nStatus: {status.Message}";
         foreach (var file in status.ChangedFiles)
         {
             _changedFilesList.Items.Add(file);
@@ -363,6 +395,29 @@ public sealed class GitHubAutomationPage : UserControl
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Warning);
         }
+    }
+
+    private string? PromptForRemoteUrl()
+    {
+        using var prompt = new Form
+        {
+            Text = "GitHub repository URL",
+            StartPosition = FormStartPosition.CenterParent,
+            FormBorderStyle = FormBorderStyle.FixedDialog,
+            MinimizeBox = false,
+            MaximizeBox = false,
+            ClientSize = new Size(460, 125)
+        };
+        var label = new Label { Text = "Enter the GitHub repository URL:", AutoSize = true, Location = new Point(12, 12) };
+        var input = new TextBox { Width = 430, Location = new Point(12, 38), Text = _remoteUrlBox.Text };
+        var ok = new Button { Text = "OK", DialogResult = DialogResult.OK, AutoSize = true, Location = new Point(280, 78) };
+        var cancel = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel, AutoSize = true, Location = new Point(355, 78) };
+        prompt.Controls.AddRange([label, input, ok, cancel]);
+        prompt.AcceptButton = ok;
+        prompt.CancelButton = cancel;
+        return prompt.ShowDialog(FindForm()) == DialogResult.OK
+            ? input.Text.Trim()
+            : null;
     }
 
     private static Button CreateButton(string text, EventHandler onClick)

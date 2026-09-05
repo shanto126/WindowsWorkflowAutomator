@@ -1,8 +1,10 @@
 using WindowsWorkflowAutomator.Configuration;
 using WindowsWorkflowAutomator.Logging;
 using WindowsWorkflowAutomator.Models;
+using WindowsWorkflowAutomator.Security;
 using WindowsWorkflowAutomator.SocialMedia;
 using WindowsWorkflowAutomator.SocialMedia.Adapters;
+using WindowsWorkflowAutomator.UI;
 
 namespace WindowsWorkflowAutomator.UI.Pages;
 
@@ -10,13 +12,19 @@ public sealed class SocialMediaManagerPage : UserControl
 {
     private readonly ISocialMediaService _socialMedia;
     private readonly IFacebookService _facebook;
+    private readonly IYouTubeService _youTube;
+    private readonly ITikTokService _tikTok;
+    private readonly IInstagramService _instagram;
+    private readonly IThreadsService _threads;
     private readonly ILinkedInService _linkedIn;
     private readonly IAppSettingsService _settings;
+    private readonly ISecretProtector _protector;
     private readonly IAppLogger _logger;
     private readonly IEnumerable<WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter> _platformAdapters;
     private readonly MultiPlatformPostOrchestrator _postOrchestrator;
 
     private readonly TextBox _folderBox = new();
+    private readonly ListBox _selectedMediaList = new();
     private readonly FlowLayoutPanel _platformStatusPanel = new();
     private readonly NumericUpDown _postCount = new();
     private readonly NumericUpDown _imagesPerPost = new();
@@ -30,26 +38,49 @@ public sealed class SocialMediaManagerPage : UserControl
     private readonly TextBox _facebookPageIdBox = new();
     private readonly TextBox _facebookTokenBox = new();
     private readonly Label _facebookStatus = new();
+    private readonly TextBox _youTubeTokenBox = new();
+    private readonly Label _youTubeStatus = new();
+    private readonly TextBox _tikTokTokenBox = new();
+    private readonly Label _tikTokStatus = new();
+    private readonly TextBox _instagramUserIdBox = new();
+    private readonly TextBox _instagramTokenBox = new();
+    private readonly Label _instagramStatus = new();
+    private readonly TextBox _threadsUserIdBox = new();
+    private readonly TextBox _threadsTokenBox = new();
+    private readonly Label _threadsStatus = new();
+    private readonly Label _selectedFilesLabel = new();
     private readonly Label _platformNote = new();
     private readonly ListBox _activity = new();
     private readonly DataGridView _queueGrid = new();
 
     private readonly BindingSource _queueBinding = new();
     private List<SocialPost> _queue = [];
+    private readonly List<string> _selectedMediaFiles = [];
+    private CancellationTokenSource? _mediaScanCancellation;
 
     public SocialMediaManagerPage(
         ISocialMediaService socialMedia,
         IFacebookService facebook,
+        IYouTubeService youTube,
+        ITikTokService tikTok,
+        IInstagramService instagram,
+        IThreadsService threads,
         ILinkedInService linkedIn,
         IAppSettingsService settings,
+        ISecretProtector protector,
         IAppLogger logger,
         IEnumerable<WindowsWorkflowAutomator.SocialMedia.Adapters.ISocialPlatformAdapter> platformAdapters,
         MultiPlatformPostOrchestrator postOrchestrator)
     {
         _socialMedia = socialMedia;
         _facebook = facebook;
+        _youTube = youTube;
+        _tikTok = tikTok;
+        _instagram = instagram;
+        _threads = threads;
         _linkedIn = linkedIn;
         _settings = settings;
+        _protector = protector;
         _logger = logger;
         _platformAdapters = platformAdapters;
         _postOrchestrator = postOrchestrator;
@@ -118,6 +149,11 @@ public sealed class SocialMediaManagerPage : UserControl
         _captionBox.Text = "New post #{Index}/{Total} on {Platform} ({Date})";
 
         _facebookTokenBox.UseSystemPasswordChar = true;
+        _facebookTokenBox.PlaceholderText = "Paste Page Access Token, then click Connect Facebook";
+        ConfigureSecretBox(_youTubeTokenBox, "Paste YouTube OAuth access token");
+        ConfigureSecretBox(_tikTokTokenBox, "Paste TikTok access token");
+        ConfigureSecretBox(_instagramTokenBox, "Paste Instagram access token");
+        ConfigureSecretBox(_threadsTokenBox, "Paste Threads access token");
 
         var setup = new TableLayoutPanel
         {
@@ -132,12 +168,26 @@ public sealed class SocialMediaManagerPage : UserControl
         setup.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         setup.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120));
 
-        AddField(setup, 0, "Image folder", _folderBox, CreateButton("Browse…", OnBrowseFolder));
-        AddField(setup, 1, "Post count", _postCount);
-        AddField(setup, 2, "Images per post", _imagesPerPost);
-        AddField(setup, 3, "Platforms", _platformList);
-        AddField(setup, 4, "Caption mode", _captionModeBox);
-        AddField(setup, 5, "Caption / template / idea", _captionBox);
+        AddField(setup, 0, "Image folder", _folderBox, CreateButton("Select Image Folder", OnBrowseFolder));
+
+        _selectedMediaList.Height = 88;
+        _selectedMediaList.SelectionMode = SelectionMode.MultiExtended;
+        _selectedMediaList.HorizontalScrollbar = true;
+        var mediaButtons = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            WrapContents = true
+        };
+        mediaButtons.Controls.Add(CreateButton("Select Images", OnBrowseImages));
+        mediaButtons.Controls.Add(CreateButton("Select Video", OnBrowseVideo));
+        mediaButtons.Controls.Add(CreateButton("Remove Selected", OnRemoveSelectedMedia));
+        AddField(setup, 1, "Selected media", _selectedMediaList, mediaButtons);
+        AddField(setup, 2, "Post count", _postCount);
+        AddField(setup, 3, "Images per post", _imagesPerPost);
+        AddField(setup, 4, "Platforms", _platformList);
+        AddField(setup, 5, "Caption mode", _captionModeBox);
+        AddField(setup, 6, "Caption / template / idea", _captionBox);
 
         _platformNote.Text = string.Empty;
         _platformNote.AutoSize = true;
@@ -218,12 +268,49 @@ public sealed class SocialMediaManagerPage : UserControl
 
         AddField(facebookConfig, 0, "Facebook App ID", _facebookAppIdBox);
         AddField(facebookConfig, 1, "Facebook Page ID", _facebookPageIdBox);
-        AddField(facebookConfig, 2, "Access token", _facebookTokenBox);
+        AddField(facebookConfig, 2, "Facebook Page Access Token", _facebookTokenBox);
 
         var fbButtons = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 40, WrapContents = false };
+        fbButtons.Controls.Add(CreateButton("Save", OnSaveFacebook));
         fbButtons.Controls.Add(CreateButton("Connect Facebook", OnConnectFacebook));
         fbButtons.Controls.Add(CreateButton("Validate", OnValidateFacebook));
         fbButtons.Controls.Add(CreateButton("Disconnect", OnDisconnectFacebook));
+
+        var youTubeSection = CreateCredentialSection(
+            "YouTube connection",
+            _youTubeTokenBox,
+            _youTubeStatus,
+            SaveYouTubeSettings,
+            token => _youTube.ConnectAsync(token),
+            () => _youTube.ValidateConnectionAsync(),
+            () => _youTube.DisconnectAsync());
+        var tikTokSection = CreateCredentialSection(
+            "TikTok connection",
+            _tikTokTokenBox,
+            _tikTokStatus,
+            SaveTikTokSettings,
+            token => _tikTok.ConnectAsync(token),
+            () => _tikTok.ValidateConnectionAsync(),
+            () => _tikTok.DisconnectAsync());
+
+        var instagramSection = CreateCredentialSection(
+            "Instagram connection",
+            _instagramTokenBox,
+            _instagramStatus,
+            SaveInstagramSettings,
+            token => _instagram.ConnectAsync(token),
+            () => _instagram.ValidateConnectionAsync(),
+            () => _instagram.DisconnectAsync(),
+            ("Instagram User ID", _instagramUserIdBox));
+        var threadsSection = CreateCredentialSection(
+            "Threads connection",
+            _threadsTokenBox,
+            _threadsStatus,
+            SaveThreadsSettings,
+            token => _threads.ConnectAsync(token),
+            () => _threads.ValidateConnectionAsync(),
+            () => _threads.DisconnectAsync(),
+            ("Threads User ID", _threadsUserIdBox));
 
         _facebookStatus.Text = "Facebook integration is not configured.";
         _facebookStatus.Dock = DockStyle.Top;
@@ -294,6 +381,10 @@ public sealed class SocialMediaManagerPage : UserControl
         setupPanel.Controls.Add(fbButtons);
         setupPanel.Controls.Add(facebookConfig);
         setupPanel.Controls.Add(facebookTitle);
+        setupPanel.Controls.Add(threadsSection);
+        setupPanel.Controls.Add(instagramSection);
+        setupPanel.Controls.Add(tikTokSection);
+        setupPanel.Controls.Add(youTubeSection);
         setupPanel.Controls.Add(unifiedButtons);
         setupPanel.Controls.Add(unifiedCompose);
         setupPanel.Controls.Add(unifiedTitle);
@@ -321,12 +412,19 @@ public sealed class SocialMediaManagerPage : UserControl
         _facebookTokenBox.PlaceholderText = string.IsNullOrWhiteSpace(_settings.Current.FacebookAccessTokenProtected)
             ? string.Empty
             : "Token already stored";
+        _instagramUserIdBox.Text = _settings.Current.InstagramUserId;
+        _threadsUserIdBox.Text = _settings.Current.ThreadsUserId;
+        UpdateSelectedMediaDisplay();
 
         UpdatePlatformState();
         PopulatePlatforms();
         PopulatePlatformStatus();
         await RefreshQueueAsync();
         await RefreshFacebookStatusAsync();
+        await RefreshConnectionStatusAsync(() => _youTube.ValidateConnectionAsync(), _youTubeStatus, "YouTube");
+        await RefreshConnectionStatusAsync(() => _tikTok.ValidateConnectionAsync(), _tikTokStatus, "TikTok");
+        await RefreshConnectionStatusAsync(() => _instagram.ValidateConnectionAsync(), _instagramStatus, "Instagram");
+        await RefreshConnectionStatusAsync(() => _threads.ValidateConnectionAsync(), _threadsStatus, "Threads");
     }
 
     private void UpdatePlatformState()
@@ -494,17 +592,299 @@ public sealed class SocialMediaManagerPage : UserControl
     private CaptionMode GetCaptionMode() =>
         _captionModeBox.SelectedItem is CaptionMode mode ? mode : CaptionMode.Manual;
 
-    private void OnBrowseFolder(object? sender, EventArgs e)
+    private async void OnBrowseFolder(object? sender, EventArgs e)
     {
-        using var dialog = new FolderBrowserDialog
+        var folderPath = await FileDialogService.SelectFolderAsync(
+            "Choose an image folder",
+            _folderBox.Text,
+            SynchronizationContext.Current);
+        if (folderPath is not null)
         {
-            Description = "Choose an image folder",
-            UseDescriptionForTitle = true,
-            SelectedPath = _folderBox.Text
+            _folderBox.Text = folderPath;
+            await LoadFolderMediaAsync(folderPath);
+        }
+    }
+
+    private async Task LoadFolderMediaAsync(string folderPath)
+    {
+        _mediaScanCancellation?.Cancel();
+        _mediaScanCancellation?.Dispose();
+        _mediaScanCancellation = new CancellationTokenSource();
+        var cancellationToken = _mediaScanCancellation.Token;
+
+        _selectedMediaList.Items.Clear();
+        _selectedMediaList.Items.Add("Scanning folder...");
+        try
+        {
+            var files = await SocialPostPlanner.GetSupportedMediaFromFolderAsync(folderPath, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            _selectedMediaFiles.Clear();
+            _selectedMediaFiles.AddRange(files);
+            UpdateSelectedMediaDisplay();
+        }
+        catch (OperationCanceledException)
+        {
+            // A newer folder selection superseded this scan.
+        }
+        catch (Exception ex)
+        {
+            _selectedMediaFiles.Clear();
+            UpdateSelectedMediaDisplay("Unable to scan folder");
+            _logger.Error("Media folder scan failed.", ex);
+            ShowWarning($"Unable to scan the selected folder: {ex.Message}");
+        }
+    }
+
+    private async void OnBrowseImages(object? sender, EventArgs e)
+    {
+        await SelectMediaFilesAsync(
+            "Select Images",
+            "Image files|*.jpg;*.jpeg;*.png;*.webp",
+            "image");
+    }
+
+    private async void OnBrowseVideo(object? sender, EventArgs e)
+    {
+        await SelectMediaFilesAsync(
+            "Select Video",
+            "Video files|*.mp4;*.mov;*.avi;*.webm",
+            "video");
+    }
+
+    private async Task SelectMediaFilesAsync(string title, string filter, string mediaType)
+    {
+        var selectedFiles = await FileDialogService.SelectFilesAsync(
+            title,
+            filter,
+            _folderBox.Text,
+            multiselect: true,
+            SynchronizationContext.Current);
+        if (selectedFiles is null)
+        {
+            return;
+        }
+
+        foreach (var file in selectedFiles)
+        {
+            if (!_selectedMediaFiles.Contains(file, StringComparer.OrdinalIgnoreCase))
+            {
+                _selectedMediaFiles.Add(file);
+            }
+        }
+
+        if (_selectedMediaFiles.Count > 0)
+        {
+            _folderBox.Text = Path.GetDirectoryName(_selectedMediaFiles[0]) ?? _folderBox.Text;
+        }
+
+        UpdateSelectedMediaDisplay();
+        AppendActivity($"Selected {selectedFiles.Length} {mediaType} file(s).");
+    }
+
+    private void OnRemoveSelectedMedia(object? sender, EventArgs e)
+    {
+        var selected = _selectedMediaList.SelectedItems.Cast<string>().ToArray();
+        if (selected.Length == 0)
+        {
+            return;
+        }
+
+        _selectedMediaFiles.RemoveAll(path => selected.Contains(path, StringComparer.OrdinalIgnoreCase));
+        UpdateSelectedMediaDisplay();
+    }
+
+    private void UpdateSelectedMediaDisplay(string? emptyMessage = null)
+    {
+        _selectedMediaList.Items.Clear();
+        if (_selectedMediaFiles.Count == 0)
+        {
+            _selectedMediaList.Items.Add(emptyMessage ?? "No media selected (optional)");
+            _selectedFilesLabel.Text = emptyMessage ?? "No media selected (optional)";
+            return;
+        }
+
+        _selectedMediaList.Items.AddRange(_selectedMediaFiles.Select(path => Path.GetFileName(path) ?? path).ToArray());
+        _selectedFilesLabel.Text = $"{_selectedMediaFiles.Count} media file(s) selected";
+    }
+
+    private async void OnBrowseFiles(object? sender, EventArgs e)
+    {
+        await SelectMediaFilesAsync(
+            "Select Images",
+            "Image files|*.jpg;*.jpeg;*.png;*.webp",
+            "image");
+    }
+
+    private GroupBox CreateCredentialSection(
+        string title,
+        TextBox tokenBox,
+        Label status,
+        Action saveSettings,
+        Func<string?, Task<PlatformOperationResult>> connect,
+        Func<Task<PlatformOperationResult>> validate,
+        Func<Task<PlatformOperationResult>> disconnect,
+        (string Label, TextBox Control)? additionalField = null)
+    {
+        var fields = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            ColumnCount = 2,
+            Padding = new Padding(8, 4, 8, 0)
         };
-        if (dialog.ShowDialog(FindForm()) == DialogResult.OK)
+        fields.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150));
+        fields.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+
+        if (additionalField is { } field)
         {
-            _folderBox.Text = dialog.SelectedPath;
+            AddSimpleField(fields, field.Label, field.Control);
+        }
+
+        AddSimpleField(fields, "Access token", tokenBox);
+
+        status.AutoSize = true;
+        status.Padding = new Padding(8, 4, 8, 4);
+        status.Text = "Not configured";
+        status.ForeColor = Color.FromArgb(180, 83, 9);
+
+        var buttons = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            Height = 40,
+            Padding = new Padding(8, 0, 0, 0),
+            WrapContents = false
+        };
+        buttons.Controls.Add(CreateButton("Save", (_, _) =>
+        {
+            saveSettings();
+            ApplyConnectionStatus(status, PlatformOperationResult.Ok("Credentials saved securely."), title);
+        }));
+        buttons.Controls.Add(CreateButton("Connect", async (_, _) =>
+        {
+            saveSettings();
+            var token = string.IsNullOrWhiteSpace(tokenBox.Text) ? null : tokenBox.Text;
+            var result = await connect(token);
+            tokenBox.Clear();
+            tokenBox.PlaceholderText = result.Succeeded ? "Token already stored" : "Enter a new token";
+            ApplyConnectionStatus(status, result, title);
+        }));
+        buttons.Controls.Add(CreateButton("Validate", async (_, _) =>
+        {
+            var result = await validate();
+            ApplyConnectionStatus(status, result, title);
+        }));
+        buttons.Controls.Add(CreateButton("Disconnect", async (_, _) =>
+        {
+            var result = await disconnect();
+            ApplyConnectionStatus(status, result, title);
+        }));
+
+        var group = new GroupBox
+        {
+            Text = title,
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            Padding = new Padding(4, 8, 4, 4),
+            Margin = new Padding(0, 4, 0, 4)
+        };
+        group.Controls.Add(status);
+        group.Controls.Add(buttons);
+        group.Controls.Add(fields);
+        return group;
+    }
+
+    private static void AddSimpleField(TableLayoutPanel host, string label, Control editor)
+    {
+        var row = host.RowCount++;
+        host.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        host.Controls.Add(new Label
+        {
+            Text = label,
+            AutoSize = true,
+            Anchor = AnchorStyles.Left | AnchorStyles.Top,
+            Margin = new Padding(0, 7, 8, 4)
+        }, 0, row);
+        editor.Dock = DockStyle.Top;
+        editor.Margin = new Padding(0, 4, 0, 4);
+        host.Controls.Add(editor, 1, row);
+    }
+
+    private void ConfigureSecretBox(TextBox box, string placeholder)
+    {
+        box.UseSystemPasswordChar = true;
+        box.PlaceholderText = placeholder;
+    }
+
+    private void SaveFacebookSettings()
+    {
+        _settings.Current.FacebookAppId = _facebookAppIdBox.Text.Trim();
+        _settings.Current.FacebookPageId = _facebookPageIdBox.Text.Trim();
+        ProtectToken(_facebookTokenBox, value => _settings.Current.FacebookAccessTokenProtected = value);
+        _settings.Save();
+        _facebookTokenBox.PlaceholderText = "Token already stored";
+    }
+
+    private void OnSaveFacebook(object? sender, EventArgs e)
+    {
+        SaveFacebookSettings();
+        ApplyFacebookStatus(PlatformOperationResult.Ok("Facebook credentials saved securely."), false);
+    }
+
+    private void SaveYouTubeSettings() => SaveToken(_youTubeTokenBox, value => _settings.Current.YouTubeAccessTokenProtected = value);
+
+    private void SaveTikTokSettings() => SaveToken(_tikTokTokenBox, value => _settings.Current.TikTokAccessTokenProtected = value);
+
+    private void SaveInstagramSettings()
+    {
+        _settings.Current.InstagramUserId = _instagramUserIdBox.Text.Trim();
+        SaveToken(_instagramTokenBox, value => _settings.Current.InstagramAccessTokenProtected = value);
+    }
+
+    private void SaveThreadsSettings()
+    {
+        _settings.Current.ThreadsUserId = _threadsUserIdBox.Text.Trim();
+        SaveToken(_threadsTokenBox, value => _settings.Current.ThreadsAccessTokenProtected = value);
+    }
+
+    private void SaveToken(TextBox tokenBox, Action<string> assign)
+    {
+        ProtectToken(tokenBox, assign);
+        _settings.Save();
+        tokenBox.PlaceholderText = "Token already stored";
+    }
+
+    private void ProtectToken(TextBox tokenBox, Action<string> assign)
+    {
+        if (!string.IsNullOrWhiteSpace(tokenBox.Text))
+        {
+            assign(_protector.Protect(tokenBox.Text.Trim()));
+            tokenBox.Clear();
+        }
+    }
+
+    private async Task RefreshConnectionStatusAsync(
+        Func<Task<PlatformOperationResult>> validate,
+        Label status,
+        string platform)
+    {
+        var result = await validate();
+        ApplyConnectionStatus(status, result, platform, false);
+    }
+
+    private void ApplyConnectionStatus(
+        Label status,
+        PlatformOperationResult result,
+        string platform,
+        bool showDialogOnError = true)
+    {
+        status.Text = result.Message;
+        status.ForeColor = result.Succeeded
+            ? Color.FromArgb(21, 128, 61)
+            : Color.FromArgb(180, 83, 9);
+        AppendActivity($"{platform}: {result.Message}");
+        if (!result.Succeeded && showDialogOnError)
+        {
+            ShowWarning(result.Message);
         }
     }
 
@@ -535,6 +915,7 @@ public sealed class SocialMediaManagerPage : UserControl
                 var created = await _socialMedia.CreateDraftsFromFolderAsync(new SocialFolderDraftRequest
                 {
                     FolderPath = _folderBox.Text,
+                    MediaPaths = _selectedMediaFiles.ToArray(),
                     Platform = platform,
                     PostCount = (int)_postCount.Value,
                     ImagesPerPost = (int)_imagesPerPost.Value,
@@ -704,11 +1085,6 @@ public sealed class SocialMediaManagerPage : UserControl
         }
 
         var folderPath = _folderBox.Text.Trim();
-        if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
-        {
-            ShowWarning("Select a valid image folder before posting.");
-            return;
-        }
 
         var request = new MultiPlatformComposeRequest(
             selectedPlatforms,
@@ -717,7 +1093,8 @@ public sealed class SocialMediaManagerPage : UserControl
             _composeCaptionBox.Text.Trim(),
             _composeHashtagsBox.Text.Trim(),
             (int)_postCount.Value,
-            (int)_imagesPerPost.Value);
+            (int)_imagesPerPost.Value,
+            _selectedMediaFiles.ToArray());
 
         try
         {
@@ -781,6 +1158,7 @@ public sealed class SocialMediaManagerPage : UserControl
     private async void OnDisconnectFacebook(object? sender, EventArgs e)
     {
         var result = await _facebook.DisconnectAsync();
+        _facebookTokenBox.PlaceholderText = "Paste Page Access Token, then click Connect Facebook";
         ApplyFacebookStatus(result);
     }
 

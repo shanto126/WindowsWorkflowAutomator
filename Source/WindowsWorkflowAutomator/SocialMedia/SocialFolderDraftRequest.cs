@@ -6,6 +6,8 @@ public sealed class SocialFolderDraftRequest
 {
     public string FolderPath { get; init; } = string.Empty;
 
+    public IReadOnlyList<string> MediaPaths { get; init; } = [];
+
     public SocialPlatform Platform { get; init; }
 
     public int PostCount { get; init; }

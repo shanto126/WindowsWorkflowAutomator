@@ -4,8 +4,8 @@ public static class SocialPostPlanner
 {
     private static readonly HashSet<string> SupportedExtensions =
     [
-        ".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp",
-        ".mp4", ".mov"
+        ".jpg", ".jpeg", ".png", ".webp",
+        ".mp4", ".mov", ".avi", ".webm"
     ];
 
     public static IReadOnlyList<IReadOnlyList<string>> SplitImagePaths(
@@ -47,18 +47,29 @@ public static class SocialPostPlanner
         return groups;
     }
 
-    public static IReadOnlyList<string> GetSupportedImagesFromFolder(string folderPath)
+    public static async Task<IReadOnlyList<string>> GetSupportedImagesFromFolderAsync(
+        string folderPath,
+        CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
+        return await Task.Run<IReadOnlyList<string>>(() =>
         {
-            throw new DirectoryNotFoundException("Image folder does not exist.");
-        }
+            cancellationToken.ThrowIfCancellationRequested();
+            if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
+            {
+                throw new DirectoryNotFoundException("Image folder does not exist.");
+            }
 
-        return Directory.EnumerateFiles(folderPath, "*", SearchOption.TopDirectoryOnly)
-            .Where(path => SupportedExtensions.Contains(Path.GetExtension(path).ToLowerInvariant()))
-            .OrderBy(path => Path.GetFileName(path), StringComparer.OrdinalIgnoreCase)
-            .ToArray();
+            return Directory.EnumerateFiles(folderPath, "*", SearchOption.TopDirectoryOnly)
+                .Where(path => SupportedExtensions.Contains(Path.GetExtension(path).ToLowerInvariant()))
+                .OrderBy(path => Path.GetFileName(path), StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }, cancellationToken);
     }
+
+    public static Task<IReadOnlyList<string>> GetSupportedMediaFromFolderAsync(
+        string folderPath,
+        CancellationToken cancellationToken = default) =>
+        GetSupportedImagesFromFolderAsync(folderPath, cancellationToken);
 
     public static bool IsVideoPath(string? path)
     {
@@ -68,6 +79,6 @@ public static class SocialPostPlanner
         }
 
         var extension = Path.GetExtension(path).ToLowerInvariant();
-        return extension is ".mp4" or ".mov";
+        return extension is ".mp4" or ".mov" or ".avi" or ".webm";
     }
 }

@@ -55,6 +55,48 @@ Several integrations require API credentials or tokens. Place these in the Setti
 
 See the platform-specific README or the corresponding page under `UI/Pages` for details and examples of required scopes and settings.
 
+### Local social-media credential storage
+
+The application stores user settings at:
+
+`%LocalAppData%\WindowsWorkflowAutomator\settings.json`
+
+The settings model is `Models/AppSettings.cs`, and dependency injection registers
+`WindowsSecretProtector` for token protection. Tokens are encrypted with Windows
+DPAPI using the current Windows user profile before they are written to the local
+settings file. Raw tokens must not be added to source code, `appsettings.json`,
+tests, or documentation.
+
+#### Facebook
+
+Use **Social Media Manager**:
+
+1. Enter the Facebook App ID and Page ID.
+2. Enter the Page Access Token in the password field.
+3. Select **Connect Facebook**.
+4. Use **Validate** to test `/{PageId}?fields=id,name`.
+5. Use **Disconnect** to clear the protected token.
+
+The Facebook service stores the IDs as `FacebookAppId` and `FacebookPageId`,
+and stores only the protected value as `FacebookAccessTokenProtected`. To replace
+an expired token, enter the new token in the same field and select **Connect
+Facebook** again; no source-code change is required.
+
+#### YouTube and TikTok
+
+`YouTubeService` stores its OAuth access token as
+`YouTubeAccessTokenProtected`. `TikTokService` stores its access token as
+`TikTokAccessTokenProtected`. Both services use the same `ISecretProtector`
+and `ConnectAsync`/`DisconnectAsync` pattern as Facebook.
+
+The Social Media Manager now exposes credential sections for Facebook, YouTube,
+TikTok, Instagram, and Threads. Each section provides Save, Connect, Validate,
+and Disconnect actions. YouTube and TikTok use their protected access-token
+fields; Instagram and Threads also expose their user ID fields. Replace an
+expired token by entering the new value and selecting Save or Connect. The
+services validate the stored token, while publishing and media-upload behavior
+is platform-specific and may require provider approval or public media URLs.
+
 ## Developer notes & architecture
 
 - Separation of concerns: UI pages (UserControl) call into service layer classes — business logic should live under `Services/` or dedicated feature folders.

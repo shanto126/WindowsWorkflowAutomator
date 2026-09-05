@@ -1,4 +1,5 @@
 using WindowsWorkflowAutomator.Models;
+using WindowsWorkflowAutomator.UI;
 
 namespace WindowsWorkflowAutomator.UI.Pages;
 
@@ -94,7 +95,7 @@ internal sealed class WorkflowActionEditDialog : Form
         _argumentsBox.Enabled = SelectedType == WorkflowActionType.OpenApplication;
     }
 
-    private void BrowseTarget()
+    private async void BrowseTarget()
     {
         if (SelectedType == WorkflowActionType.OpenWebsite)
         {
@@ -103,28 +104,27 @@ internal sealed class WorkflowActionEditDialog : Form
 
         if (SelectedType == WorkflowActionType.OpenFolder)
         {
-            using var dialog = new FolderBrowserDialog
+            var folderPath = await FileDialogService.SelectFolderAsync(
+                "Choose a folder",
+                _targetBox.Text,
+                SynchronizationContext.Current);
+            if (folderPath is not null)
             {
-                Description = "Choose a folder",
-                UseDescriptionForTitle = true,
-                SelectedPath = _targetBox.Text
-            };
-            if (dialog.ShowDialog(this) == DialogResult.OK)
-            {
-                _targetBox.Text = dialog.SelectedPath;
+                _targetBox.Text = folderPath;
             }
 
             return;
         }
 
-        using var fileDialog = new OpenFileDialog
+        var filePaths = await FileDialogService.SelectFilesAsync(
+            "Select application",
+            "Programs (*.exe)|*.exe|All files (*.*)|*.*",
+            Path.GetDirectoryName(_targetBox.Text),
+            multiselect: false,
+            SynchronizationContext.Current);
+        if (filePaths is not null)
         {
-            Filter = "Programs (*.exe)|*.exe|All files (*.*)|*.*",
-            FileName = _targetBox.Text
-        };
-        if (fileDialog.ShowDialog(this) == DialogResult.OK)
-        {
-            _targetBox.Text = fileDialog.FileName;
+            _targetBox.Text = filePaths[0];
         }
     }
 }

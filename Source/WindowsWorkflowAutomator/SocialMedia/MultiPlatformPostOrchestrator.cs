@@ -71,8 +71,8 @@ public sealed class MultiPlatformPostOrchestrator
             return new PlatformPublishSummary(platform, PlatformOperationStatus.ComingSoon, false, message);
         }
 
-        var imagePaths = ResolveImagePaths(request);
-        if (imagePaths.Count == 0) 
+        var imagePaths = await ResolveImagePathsAsync(request, cancellationToken);
+        if (imagePaths.Count == 0 && platform != SocialPlatform.Facebook)
         {
             var message = "No supported image files were found for the selected folder.";
             _logger.Warning(message);
@@ -119,7 +119,9 @@ public sealed class MultiPlatformPostOrchestrator
         return new PlatformPublishSummary(platform, publishResult.Status, false, publishResult.Message, publishResult.ExternalId);
     }
 
-    private static IReadOnlyList<string> ResolveImagePaths(MultiPlatformComposeRequest request)
+    private static async Task<IReadOnlyList<string>> ResolveImagePathsAsync(
+        MultiPlatformComposeRequest request,
+        CancellationToken cancellationToken)
     {
         if (request.ImagePaths is { Count: > 0 })
         {
@@ -134,7 +136,7 @@ public sealed class MultiPlatformPostOrchestrator
             return [];
         }
 
-        var images = SocialPostPlanner.GetSupportedImagesFromFolder(request.FolderPath);
+        var images = await SocialPostPlanner.GetSupportedMediaFromFolderAsync(request.FolderPath, cancellationToken);
         if (request.PostCount <= 1 && request.ImagesPerPost <= 1)
         {
             return images.Take(1).ToList();

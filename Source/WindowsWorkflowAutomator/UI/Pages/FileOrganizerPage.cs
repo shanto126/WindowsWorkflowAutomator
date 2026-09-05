@@ -2,6 +2,7 @@ using WindowsWorkflowAutomator.Configuration;
 using WindowsWorkflowAutomator.FileOrganizer;
 using WindowsWorkflowAutomator.Logging;
 using WindowsWorkflowAutomator.Models;
+using WindowsWorkflowAutomator.UI;
 
 namespace WindowsWorkflowAutomator.UI.Pages;
 
@@ -255,21 +256,19 @@ public class FileOrganizerPage : UserControl
         await RefreshRulesAsync();
     }
 
-    private void OnBrowseFolder(object? sender, EventArgs e)
+    private async void OnBrowseFolder(object? sender, EventArgs e)
     {
-        using var dialog = new FolderBrowserDialog
-        {
-            Description = "Choose the folder to watch",
-            UseDescriptionForTitle = true,
-            SelectedPath = _folderBox.Text
-        };
-        if (dialog.ShowDialog(FindForm()) != DialogResult.OK)
+        var folderPath = await FileDialogService.SelectFolderAsync(
+            "Choose the folder to watch",
+            _folderBox.Text,
+            SynchronizationContext.Current);
+        if (folderPath is null)
         {
             return;
         }
 
-        _folderBox.Text = dialog.SelectedPath;
-        _settings.Current.FileOrganizerWatchFolder = dialog.SelectedPath;
+        _folderBox.Text = folderPath;
+        _settings.Current.FileOrganizerWatchFolder = folderPath;
         _settings.Save();
         if (_monitorToggle.Checked)
         {

@@ -31,7 +31,9 @@ public sealed class FileOrganizerService : IFileOrganizerService
         }
 
         var results = new List<FileOrganizationActionLog>();
-        var files = Directory.GetFiles(folderPath, "*", SearchOption.TopDirectoryOnly);
+        var files = await Task.Run(
+            () => Directory.GetFiles(folderPath, "*", SearchOption.TopDirectoryOnly),
+            cancellationToken);
         foreach (var file in files)
         {
             cancellationToken.ThrowIfCancellationRequested();
